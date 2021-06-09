@@ -15,7 +15,7 @@ get_questions_opts <- function(data, var, var_lab){
   ret <- data %>% 
     dplyr::filter(Variavel == var)
   
-  if(grepl("categórico", ret$Metrica)){
+  if(grepl("múltipla escolha", ret$Metrica)){
     
     ret <- ret %>%
       dplyr::pull(vars_opts) %>% 
@@ -135,15 +135,15 @@ gr_colors <- groups %>%
     TRUE ~ "gray50"
   ))
 
-labs <- preguntas %>% 
-  dplyr::filter(Variavel == "V1_Rodada_xxxx") %>% 
-  dplyr::pull(vars_opts) %>% 
-  purrr::pluck(1) %>% 
-  dplyr::select( Opcoes_numero, Opcoes_nome ,  `Labels in English`, `Labels in English simp`)
 
 
 entrevistados <- groups %>% 
-  dplyr::left_join(., labs, by = c( "V1_Rodada" = "Opcoes_numero")) %>% 
+  dplyr::left_join(., preguntas %>% 
+                     dplyr::filter(Variavel == "V1_Rodada_xxxx") %>% 
+                     dplyr::pull(vars_opts) %>% 
+                     purrr::pluck(1) %>% 
+                     dplyr::select( Opcoes_numero, Opcoes_nome ,  `Labels in English`, `Labels in English simp`)
+                   , by = c( "V1_Rodada" = "Opcoes_numero")) %>% 
   dplyr::mutate(status = `Labels in English simp`) %>% 
   dplyr::filter(grepl('^Interviewed', status))
 
@@ -259,20 +259,30 @@ results_lst$Empresas_orgs_atributos$V39b_group %>%
 
 #### pregunta V40a
 
-var_label <- "V40a_"
+var_label <- "V40a"
+
+var_opts <- get_questions_opts(data = preguntas, 
+                               var = var_label, 
+                               var_lab = "label") %>% 
+  dplyr::pull(Opcoes_numero)
+
+#validacion de las opciones pregunta
+
+stopifnot("Opciones de respuesta duplicadas" =  !any(gsub("[a-zA-Z0-9]+_","", var_opts) %>% table > 1)  ) 
+stopifnot("Falta alguna opcion de respuesta" = all(abs(diff(  gsub("[a-zA-Z0-9]+_","", var_opts) %>% as.numeric  )) == 1))
 
 tots <- raw_list %>% 
   purrr::pluck(., grep("Empresas_orgs_atributos", names(raw_list))) %>%
-  dplyr::select(ID, Nome, V1, starts_with(var_label)) %>% 
+  dplyr::select(ID, Nome, V1, !!var_opts) %>% 
   tidyr::drop_na() %>% 
   group_by(V1) %>% 
   tally()
 
 results_lst$Empresas_orgs_atributos$V40a <- raw_list %>% 
   purrr::pluck(., grep("Empresas_orgs_atributos", names(raw_list))) %>%
-  dplyr::select(ID, Nome, V1, starts_with(var_label)) %>% 
+  dplyr::select(ID, Nome, V1, !!var_opts) %>% 
   tidyr::drop_na() %>% 
-  pivot_longer(cols = starts_with(var_label)) %>% 
+  pivot_longer(cols = !!var_opts) %>% 
   dplyr::left_join(., get_questions_opts(data = preguntas, var = "V40a", var_lab = "Label"), by= c("name" = "Opcoes_numero" )) %>% 
   dplyr::group_by( V1, Label) %>% 
   dplyr::summarise( Count = sum(as.numeric(value))) %>%
@@ -281,6 +291,454 @@ results_lst$Empresas_orgs_atributos$V40a <- raw_list %>%
   dplyr::mutate(freq = round(Count/n,3)*100, Frequency = paste0(freq, "%")) %>% 
   dplyr::rename("Group" = V1, !!(get_var_label(data = preguntas, var = "V40a")) := Label, "Total"= n)
  
+#### pregunta v40b
+
+
+var_label <- "V40b"
+
+results_lst$Empresas_orgs_atributos$V40b <- raw_list %>% 
+  purrr::pluck(., grep("Empresas_orgs_atributos", names(raw_list))) %>%
+  dplyr::select(ID, Nome, V1, !!var_label) %>%
+  dplyr::mutate(across(everything(), as.character)) %>% 
+  dplyr::left_join(., get_questions_opts(data = preguntas, 
+                                         var = var_label, 
+                                         var_lab = "label"), by = c("V40b" = "Opcoes_numero")) %>%
+  dplyr::group_by(V1) %>% 
+  dplyr::mutate(total = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(V1, label) %>% 
+  dplyr::summarise(Count = n(), total = unique(total),freq = round(Count/total,3)*100, Frequency = paste0(freq, "%")) %>% 
+  dplyr::rename(Group = V1, !!get_var_label(data = preguntas, var = var_label) := label)
+
+#### pregunta v41a
+
+var_label <- "V41a"
+
+var_opts <- get_questions_opts(data = preguntas, 
+                   var = var_label, 
+                   var_lab = "label") %>% 
+  dplyr::pull(Opcoes_numero)
+
+#validacion de las opciones pregunta
+
+stopifnot("Opciones de respuesta duplicadas" =  !any(gsub("[a-zA-Z0-9]+_","", var_opts) %>% table > 1)  ) 
+stopifnot("Falta alguna opcion de respuesta" = all(abs(diff(  gsub("[a-zA-Z0-9]+_","", var_opts) %>% as.numeric  )) == 1))
+
+df_trial <- raw_list %>% 
+  purrr::pluck(., grep("Empresas_orgs_atributos", names(raw_list))) %>%
+  dplyr::select(ID, Nome, V1, !!var_opts) %>% 
+  tidyr::drop_na() %>%
+  tidyr::pivot_longer(cols = -(ID:V1), names_to= "nms") %>% 
+  dplyr::left_join(., get_questions_opts(data = preguntas, 
+                                         var = var_label, 
+                                         var_lab = "label"), by = c("nms" = "Opcoes_numero" ))
+  
+
+non_response <- df_trial %>% 
+  dplyr::filter(nms == "V41a_0", value  != 0) %>%
+  nrow()
+non_res_frq <- round(non_response/length(unique(df_trial$Nome))*100)
+
+
+results_lst$Empresas_orgs_atributos$V41a <- df_trial %>% 
+  dplyr::mutate(value = as.numeric(value)) %>% 
+  dplyr::filter(value != 0 ) %>% 
+  dplyr::filter(nms != "V41a_0") %>%
+  dplyr::group_by(V1, label) %>% 
+  summarise(count = n()) %>% 
+  ungroup() %>% 
+  dplyr::left_join(., gr_colors %>% select(V1, n), by = "V1") %>% 
+  dplyr::mutate(freq = paste0(round(count/n*100,2), "%") ) %>% 
+  pivot_wider(id_cols = label, names_from = V1, values_from = c(count, freq)) %>% 
+  dplyr::mutate(across(everything(), .fns = function(i){ifelse(is.na(i),0, i)})) %>% 
+  dplyr::mutate(total =  rowSums(select(., starts_with("count")))) %>% 
+  arrange(desc(total)) %>% 
+  add_row(label = "No information count",  total = non_response ) %>%
+  dplyr::rename(!!get_var_label(data = preguntas, var = var_label) := label)
+
+
+#### pregunta v41a solo con los entrevistados
+
+
+var_label <- "V41a"
+
+var_opts <- get_questions_opts(data = preguntas, 
+                               var = var_label, 
+                               var_lab = "label") %>% 
+  dplyr::pull(Opcoes_numero)
+
+#validacion de las opciones pregunta
+
+stopifnot("Opciones de respuesta duplicadas" =  !any(gsub("[a-zA-Z0-9]+_","", var_opts) %>% table > 1)  ) 
+stopifnot("Falta alguna opcion de respuesta" = all(abs(diff(  gsub("[a-zA-Z0-9]+_","", var_opts) %>% as.numeric  )) == 1))
+
+df_trial <- raw_list %>% 
+  purrr::pluck(., grep("Empresas_orgs_atributos", names(raw_list))) %>% 
+  dplyr::select(ID, Nome, V1, !!var_opts) %>% 
+  dplyr::mutate(ID = as.character(ID)) %>% 
+  dplyr::left_join(., entrevistados %>% dplyr::select(ID_node, status), by = c("ID" = "ID_node")) %>% 
+  dplyr::filter(!is.na(status)) %>%
+  dplyr::select(-status) 
+
+stopifnot("Numero de empresas no coincide con el total de entrevistados" = nrow(df_trial) == total_entrevistas)
+
+non_response <- df_trial %>% 
+  dplyr::filter(!!sym(var_label)  != 0) %>%
+  nrow()
+non_res_frq <- round(non_response/length(unique(df_trial$Nome))*100)
+
+
+results_lst$Empresas_orgs_atributos$V41a_entrev <- df_trial %>% 
+  tidyr::pivot_longer(cols = -(ID:V1), names_to= "nms") %>% 
+  dplyr::left_join(., get_questions_opts(data = preguntas, 
+                                         var = var_label, 
+                                         var_lab = "label"), by = c("nms" = "Opcoes_numero" )) %>% 
+  dplyr::mutate(value = as.numeric(value)) %>% 
+  dplyr::filter(value != 0 ) %>% 
+  dplyr::filter(nms != "V41a_0") %>%
+  dplyr::group_by(V1, label) %>% 
+  summarise(count = n()) %>% 
+  ungroup() %>% 
+  dplyr::left_join(., gr_colors %>% select(V1, n), by = "V1") %>% 
+  dplyr::mutate(freq = paste0(round(count/n*100,2), "%") ) %>% 
+  pivot_wider(id_cols = label, names_from = V1, values_from = c(count, freq)) %>% 
+  dplyr::mutate(across(everything(), .fns = function(i){ifelse(is.na(i),0, i)})) %>% 
+  dplyr::mutate(total =  rowSums(select(., starts_with("count")))) %>% 
+  arrange(desc(total)) %>% 
+  add_row(label = "No information count",  total = non_response ) %>%
+  dplyr::rename(!!get_var_label(data = preguntas, var = var_label) := label)
+
+
+##### pregunta V41b
+
+var_label <- "V41b"
+
+var_opts <- get_questions_opts(data = preguntas, 
+                               var = var_label, 
+                               var_lab = "label") %>% 
+  dplyr::pull(Opcoes_numero)
+
+#validacion de las opciones pregunta
+
+stopifnot("Opciones de respuesta duplicadas" =  !any(gsub("[a-zA-Z0-9]+_","", var_opts) %>% table > 1)  ) 
+stopifnot("Falta alguna opcion de respuesta" = all(abs(diff(  gsub("[a-zA-Z0-9]+_","", var_opts) %>% as.numeric  )) == 1))
+
+df_trial <- raw_list %>% 
+  purrr::pluck(., grep("Empresas_orgs_atributos", names(raw_list))) %>%  
+  dplyr::select(ID, Nome, V1, !!var_label) %>% 
+  dplyr::mutate(across(everything(), as.character)) %>% 
+  dplyr::left_join(., get_questions_opts(data = preguntas,
+                                         var  = var_label,
+                                         var_lab = "label"), by = c("V41b" = "Opcoes_numero")) %>% 
+  tidyr::drop_na()
+
+
+
+non_response <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) == 0) %>% 
+  nrow()
+non_res_frq <- round(non_response/nrow(df_trial)*100)
+
+results_lst$Empresas_orgs_atributos$V41b <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) != 0) %>% 
+  dplyr::group_by(label) %>% 
+  dplyr::tally() %>%  
+  dplyr::mutate(freq = round(n/sum(n),3)*100, Frequency = paste0(freq, "%")) %>%  
+  ungroup() %>% 
+  add_row( label = "No information rate",  n = non_response,  freq = non_res_frq ,Frequency = paste0(non_res_frq,"%")) %>% 
+  dplyr::select( !!get_var_label(data = preguntas, var = var_label) := label, Count = n, Percentage = Frequency) %>% 
+  dplyr::arrange(desc(Count))
+
+
+
+results_lst$Empresas_orgs_atributos$V41b_by_group <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) != 0) %>% 
+  dplyr::group_by(V1) %>% 
+  dplyr::mutate(tot = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(V1, label) %>% 
+  dplyr::summarise(Count = n(), tot = unique(tot),freq = round(Count/tot,3)*100, Frequency = paste0(freq, "%")) %>%  
+  ungroup() %>% 
+  add_row(V1 = "No information", label = "No information rate",  Count = non_response, tot = Count, freq = non_res_frq ,Frequency = paste0(non_res_frq,"%")) %>% 
+  dplyr::select(Group = V1, !!get_var_label(data = preguntas, var = var_label) := label, Count, Percentage = Frequency)
+
+##### pregunta V41b entrevistados
+
+var_label <- "V41b"
+
+var_opts <- get_questions_opts(data = preguntas, 
+                               var = var_label, 
+                               var_lab = "label") %>% 
+  dplyr::pull(Opcoes_numero)
+
+#validacion de las opciones pregunta
+
+stopifnot("Opciones de respuesta duplicadas" =  !any(gsub("[a-zA-Z0-9]+_","", var_opts) %>% table > 1)  ) 
+stopifnot("Falta alguna opcion de respuesta" = all(abs(diff(  gsub("[a-zA-Z0-9]+_","", var_opts) %>% as.numeric  )) == 1))
+
+df_trial <- raw_list %>% 
+  purrr::pluck(., grep("Empresas_orgs_atributos", names(raw_list))) %>%  
+  dplyr::select(ID, Nome, V1, !!var_label) %>% 
+  dplyr::mutate(across(everything(), as.character)) %>% 
+  dplyr::left_join(., get_questions_opts(data = preguntas,
+                                         var  = var_label,
+                                         var_lab = "label"), by = c("V41b" = "Opcoes_numero")) %>%
+  dplyr::left_join(., entrevistados %>% dplyr::select(ID_node, status), by = c("ID" = "ID_node")) %>%
+  tidyr::drop_na()
+
+stopifnot("Numero de empresas no coincide con el total de entrevistados" = nrow(df_trial) == total_entrevistas)
+
+
+non_response <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) == 0) %>% 
+  nrow()
+non_res_frq <- round(non_response/nrow(df_trial)*100)
+
+results_lst$Empresas_orgs_atributos$V41b_entrev <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) != 0) %>% 
+  dplyr::group_by(label) %>% 
+  dplyr::tally() %>%  
+  dplyr::mutate(freq = round(n/sum(n),3)*100, Frequency = paste0(freq, "%")) %>%  
+  ungroup() %>% 
+  add_row( label = "No information rate",  n = non_response,  freq = non_res_frq ,Frequency = paste0(non_res_frq,"%")) %>% 
+  dplyr::select( !!get_var_label(data = preguntas, var = var_label) := label, Count = n, Percentage = Frequency) %>% 
+  dplyr::arrange(desc(Count))
+
+
+
+results_lst$Empresas_orgs_atributos$V41b_by_group_entrev <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) != 0) %>% 
+  dplyr::group_by(V1) %>% 
+  dplyr::mutate(tot = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(V1, label) %>% 
+  dplyr::summarise(Count = n(), tot = unique(tot),freq = round(Count/tot,3)*100, Frequency = paste0(freq, "%")) %>%  
+  ungroup() %>% 
+  add_row(V1 = "No information", label = "No information rate",  Count = non_response, tot = Count, freq = non_res_frq ,Frequency = paste0(non_res_frq,"%")) %>% 
+  dplyr::select(Group = V1, !!get_var_label(data = preguntas, var = var_label) := label, Count, Percentage = Frequency)
+
+#### pregunta V42a
+
+
+var_label <- "V42a"
+
+var_opts <- get_questions_opts(data = preguntas, 
+                               var = var_label, 
+                               var_lab = "label") %>% 
+  dplyr::pull(Opcoes_numero)
+
+#validacion de las opciones pregunta
+
+stopifnot("Opciones de respuesta duplicadas" =  !any(gsub("[a-zA-Z0-9]+_","", var_opts) %>% table > 1)  ) 
+stopifnot("Falta alguna opcion de respuesta" = all(abs(diff(  gsub("[a-zA-Z0-9]+_","", var_opts) %>% as.numeric  )) == 1))
+
+
+df_trial <- raw_list %>% 
+  purrr::pluck(., grep("Empresas_orgs_atributos", names(raw_list))) %>%  
+  dplyr::select(ID, Nome, V1, !!var_label) %>% 
+  dplyr::mutate(across(everything(), as.character)) %>% 
+  tidyr::drop_na() %>% 
+  dplyr::left_join(., get_questions_opts(data = preguntas, 
+                                         var = var_label, 
+                                         var_lab = "label"), by = c("V42a" ="Opcoes_numero"))
+
+
+
+non_response <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) == "0") %>%
+  nrow()
+non_res_frq <- round(non_response/nrow(df_trial)*100)
+
+results_lst$Empresas_orgs_atributos$V42a <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) != 0) %>% 
+  dplyr::group_by(label) %>% 
+  dplyr::tally() %>%  
+  dplyr::mutate(freq = round(n/sum(n),3)*100, Frequency = paste0(freq, "%")) %>%  
+  ungroup() %>% 
+  add_row( label = "No information rate",  n = non_response,  freq = non_res_frq ,Frequency = paste0(non_res_frq,"%")) %>% 
+  dplyr::select( !!get_var_label(data = preguntas, var = var_label) := label, Count = n, Percentage = Frequency) %>% 
+  dplyr::arrange(desc(Count))
+
+results_lst$Empresas_orgs_atributos$V42a_by_group <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) != "0") %>%
+  dplyr::group_by(V1) %>% 
+  dplyr::mutate(tot = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(V1, label) %>% 
+  dplyr::summarise(Count = n(), tot = unique(tot),freq = round(Count/tot,3)*100, Frequency = paste0(freq, "%")) %>%
+  ungroup() %>% 
+  add_row(V1 = "No information", label = "No information Rate",  Count = non_response, tot = Count, freq = non_res_frq,Frequency = paste0(non_res_frq,"%")) %>% 
+  dplyr::select(Group = V1, !!get_var_label(data = preguntas, var = var_label) := label, Count, Percentage = Frequency) 
+
+
+#### pregunta V42a entrevistados
+
+var_label <- "V42a"
+
+var_opts <- get_questions_opts(data = preguntas, 
+                               var = var_label, 
+                               var_lab = "label") %>% 
+  dplyr::pull(Opcoes_numero)
+
+#validacion de las opciones pregunta
+
+stopifnot("Opciones de respuesta duplicadas" =  !any(gsub("[a-zA-Z0-9]+_","", var_opts) %>% table > 1)  ) 
+stopifnot("Falta alguna opcion de respuesta" = all(abs(diff(  gsub("[a-zA-Z0-9]+_","", var_opts) %>% as.numeric  )) == 1))
+
+
+df_trial <- raw_list %>% 
+  purrr::pluck(., grep("Empresas_orgs_atributos", names(raw_list))) %>%  
+  dplyr::select(ID, Nome, V1, !!var_label) %>% 
+  dplyr::mutate(across(everything(), as.character)) %>% 
+  tidyr::drop_na() %>% 
+  dplyr::left_join(., get_questions_opts(data = preguntas, 
+                                         var = var_label, 
+                                         var_lab = "label"), by = c("V42a" ="Opcoes_numero")) %>% 
+  dplyr::left_join(., entrevistados %>% dplyr::select(ID_node, status), by = c("ID" = "ID_node")) %>% 
+  dplyr::filter(!is.na(status)) %>% 
+  dplyr::select(-status)
+
+stopifnot("Numero de empresas no coincide con el total de entrevistados" = nrow(df_trial) == total_entrevistas)
+
+
+non_response <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) == "0") %>%
+  nrow()
+non_res_frq <- round(non_response/nrow(df_trial)*100)
+
+results_lst$Empresas_orgs_atributos$V42a_entrev <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) != 0) %>% 
+  dplyr::group_by(label) %>% 
+  dplyr::tally() %>%  
+  dplyr::mutate(freq = round(n/sum(n),3)*100, Frequency = paste0(freq, "%")) %>%  
+  ungroup() %>% 
+  add_row( label = "No information rate",  n = non_response,  freq = non_res_frq ,Frequency = paste0(non_res_frq,"%")) %>% 
+  dplyr::select( !!get_var_label(data = preguntas, var = var_label) := label, Count = n, Percentage = Frequency) %>% 
+  dplyr::arrange(desc(Count))
+
+results_lst$Empresas_orgs_atributos$V42a_by_group_entrev <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) != "0") %>%
+  dplyr::group_by(V1) %>% 
+  dplyr::mutate(tot = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(V1, label) %>% 
+  dplyr::summarise(Count = n(), tot = unique(tot),freq = round(Count/tot,3)*100, Frequency = paste0(freq, "%")) %>%
+  ungroup() %>% 
+  add_row(V1 = "No information", label = "No information Rate",  Count = non_response, tot = Count, freq = non_res_frq,Frequency = paste0(non_res_frq,"%")) %>% 
+  dplyr::select(Group = V1, !!get_var_label(data = preguntas, var = var_label) := label, Count, Percentage = Frequency) 
+
+
+#### pregunta v42b
+
+
+var_label <- "V42b"
+
+var_opts <- get_questions_opts(data = preguntas, 
+                               var = var_label, 
+                               var_lab = "label") %>% 
+  dplyr::pull(Opcoes_numero)
+
+#validacion de las opciones pregunta
+
+stopifnot("Opciones de respuesta duplicadas" =  !any(gsub("[a-zA-Z0-9]+_","", var_opts) %>% table > 1)  ) 
+stopifnot("Falta alguna opcion de respuesta" = all(abs(diff(  gsub("[a-zA-Z0-9]+_","", var_opts) %>% as.numeric  )) == 1))
+
+
+df_trial <- raw_list %>% 
+  purrr::pluck(., grep("Empresas_orgs_atributos", names(raw_list))) %>%  
+  dplyr::select(ID, Nome, V1, !!var_label) %>% 
+  dplyr::mutate(across(everything(), as.character))  %>% 
+  tidyr::drop_na() %>% 
+  dplyr::left_join(., get_questions_opts(data = preguntas, 
+                                         var = var_label , 
+                                         var_lab = "label"), by =  c("V42b" = "Opcoes_numero"))
+
+
+non_response <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) == "0") %>%
+  nrow()
+non_res_frq <- round(non_response/nrow(df_trial)*100)
+
+results_lst$Empresas_orgs_atributos$V42b <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) != "0") %>% 
+  dplyr::group_by(label) %>% 
+  dplyr::tally(sort = TRUE) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate( freq = round(n/sum(n),3)*100, Frequency = paste0(freq, "%")) %>% 
+  dplyr::select( !!get_var_label(data = preguntas, var = var_label) := label, Count = n, Frequency) %>% 
+  add_row( !!get_var_label(data = preguntas, var = var_label) := "No information Rate",  Count = non_response,  Frequency = paste0(non_res_frq,"%") ) 
+
+
+
+results_lst$Empresas_orgs_atributos$V42b_by_group <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) != "0") %>% 
+  dplyr::group_by(V1) %>% 
+  dplyr::mutate(tot = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(V1, label) %>% 
+  dplyr::summarise(Count = n(), tot = unique(tot),freq = round(Count/tot,3)*100, Frequency = paste0(freq, "%")) %>% 
+  ungroup() %>% 
+  dplyr::select(Groups = V1, "Year of foundation" = label, Count, Frequency) %>% 
+  add_row(Groups = "No information",    "Year of foundation" = "No information Rate",  Count = non_response,  Frequency = paste0(non_res_frq,"%") ) 
+
+
+#### pregunta v42b por entrevistados
+
+var_label <- "V42b"
+
+var_opts <- get_questions_opts(data = preguntas, 
+                               var = var_label, 
+                               var_lab = "label") %>% 
+  dplyr::pull(Opcoes_numero)
+
+#validacion de las opciones pregunta
+
+stopifnot("Opciones de respuesta duplicadas" =  !any(gsub("[a-zA-Z0-9]+_","", var_opts) %>% table > 1)  ) 
+stopifnot("Falta alguna opcion de respuesta" = all(abs(diff(  gsub("[a-zA-Z0-9]+_","", var_opts) %>% as.numeric  )) == 1))
+
+
+df_trial <- raw_list %>% 
+  purrr::pluck(., grep("Empresas_orgs_atributos", names(raw_list))) %>%  
+  dplyr::select(ID, Nome, V1, !!var_label) %>% 
+  dplyr::mutate(across(everything(), as.character))  %>% 
+  tidyr::drop_na() %>% 
+  dplyr::left_join(., get_questions_opts(data = preguntas, 
+                                         var = var_label , 
+                                         var_lab = "label"), by =  c("V42b" = "Opcoes_numero")) %>% 
+  dplyr::left_join(., entrevistados %>% dplyr::select(ID_node, status), by = c("ID" = "ID_node")) %>% 
+  dplyr::filter(!is.na(status)) %>% 
+  dplyr::select(-status)
+
+stopifnot("Numero de empresas no coincide con el total de entrevistados" = nrow(df_trial) == total_entrevistas)
+
+
+non_response <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) == "0") %>%
+  nrow()
+non_res_frq <- round(non_response/nrow(df_trial)*100)
+
+results_lst$Empresas_orgs_atributos$V42b_entrev <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) != "0") %>% 
+  dplyr::group_by(label) %>% 
+  dplyr::tally(sort = TRUE) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate( freq = round(n/sum(n),3)*100, Frequency = paste0(freq, "%")) %>% 
+  dplyr::select( !!get_var_label(data = preguntas, var = var_label) := label, Count = n, Frequency) %>% 
+  add_row( !!get_var_label(data = preguntas, var = var_label) := "No information Rate",  Count = non_response,  Frequency = paste0(non_res_frq,"%") ) 
+
+
+
+results_lst$Empresas_orgs_atributos$V42b_by_group_entrev <- df_trial %>% 
+  dplyr::filter(!!sym(var_label) != "0") %>% 
+  dplyr::group_by(V1) %>% 
+  dplyr::mutate(tot = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(V1, label) %>% 
+  dplyr::summarise(Count = n(), tot = unique(tot),freq = round(Count/tot,3)*100, Frequency = paste0(freq, "%")) %>% 
+  ungroup() %>% 
+  dplyr::select(Groups = V1, "Year of foundation" = label, Count, Frequency) %>% 
+  add_row(Groups = "No information",    "Year of foundation" = "No information Rate",  Count = non_response,  Frequency = paste0(non_res_frq,"%") ) 
+
 
 
 
