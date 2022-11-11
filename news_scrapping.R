@@ -6,9 +6,10 @@
 
 if(!require(pacman)){install.packages("pacman");library(pacman)}else{library(pacman)}
 pacman::p_load(tidyverse, rtweet,httr, jsonlite, geojson, geojsonlint, httpuv, stringr, rvest, RSelenium, 
-               udpipe,quanteda, lubridate, bit64, stringdist, magrittr, wordcloud, lattice )
+               udpipe,quanteda, lubridate, bit64, stringdist, magrittr, wordcloud, lattice, lexicon, quanteda.textplots,
+               igraph,networkD3, intergraph)
 
-
+#kemixi3361@kembung.com
 
 #################################################################
 ##### Download News from internet due some key words ############
@@ -19,7 +20,7 @@ pacman::p_load(tidyverse, rtweet,httr, jsonlite, geojson, geojsonlint, httpuv, s
 
 endpoint <- "https://webhose.io//filterWebContent?"
 
-apikey.webhose <- "0264caf1-9e51-4c23-8ece-bbe38c48ca03" # api key de brayan
+apikey.webhose <- "66d3a68e-ec46-46eb-a6ab-8e814d39a358" # api key de brayan
 
 format.v <- "json" 
 
@@ -34,8 +35,8 @@ ts.v <- as.integer64(as.numeric(monthago)*1000, digits=15)
 only.post <- "true"
 
 
-q.v <-"%22parceiros%20pela%20amaz%C3%B4nia%22%20OR%20%22partnership%20platform%20for%20the%20amazon%22%20OR%20%22plataforma%20parceiros%20pela%20amaz%C3%B4nia%22"
-  #'"parceiros pela amazônia" OR "partnership platform for the amazon" OR "plataforma parceiros pela amazônia"'
+q.v <-"%22parceiros%20pela%20amaz%C3%B4nia%22%20OR%20%22partnership%20platform%20for%20the%20amazon%22"
+q.v <-  "parceiros pela amazônia OR partnership platform for the amazon" #"plataforma parceiros pela amazônia" " OR 
 q.v <- URLencode(q.v)# %>% paste0(.,"%20is_first%3Atrue" )
 
 sort.v <- "relevancy"
@@ -107,12 +108,15 @@ if(articles.flt.mra > 0){
   
 }
 
+
 ## guardar data frame
-saveRDS(articles.flt.df, "Y:/PPA-SNA/input_data/news_crawled/ppa_pt_en_1_jun_21.rds")
+route <- "D:/OneDrive - CGIAR/Documents/PPA 2021/news_downloaded/ppa_pt_en_21_jun_20_ago"
+saveRDS(articles.flt.df, paste0(route, ".rds"))
+write_csv(articles.flt.df %>% dplyr::select(url, author, published , title, text, thread.site_type, language), paste0(route, ".csv"))
 
 
 
- news.flt.dt <- articles.flt.df %>% 
+news.flt.dt <- articles.flt.df %>% 
   dplyr::mutate(., text.pr = tolower(text))%>% 
   dplyr::mutate(., text.pr = gsub( "( |^)\\| [a-z]+", "" , text.pr)) %>%
   dplyr::filter(., (thread.site_type == "news" | thread.site_type == "blogs"))
@@ -128,8 +132,13 @@ saveRDS(articles.flt.df, "Y:/PPA-SNA/input_data/news_crawled/ppa_pt_en_1_jun_21.
       data.frame()
   #saveRDS(news.flt.dt, paste0("D:/OneDrive - CGIAR/Desktop/ppa_brasil/input_data/news_crawled/", "Conserva??o_da_biodiversidade_", Sys.Date()) )
   
-  news.flt.dt <- readRDS("D:/OneDrive - CGIAR/Desktop/ppa_brasil/input_data/news_crawled/Conserva??o_da_biodiversidade/impact_business_brazil_2019-07-05.rds")
-
+  news.flt.dt <- readRDS( "D:/OneDrive - CGIAR/Documents/PPA 2021/news_downloaded/junio 2021/ppa_pt_en_1_jun_21.rds")
+ 
+  news.flt.dt <- news.flt.dt %>% 
+    dplyr::mutate(., text.pr = tolower(text))%>% 
+    dplyr::mutate(., text.pr = gsub( "( |^)\\| [a-z]+", "" , text.pr)) %>%
+    dplyr::filter(., (thread.site_type == "news" | thread.site_type == "blogs"))
+  
   ### eliminar entradas que sean de la misma url y tengan mucha similaridad entre si
   news.flt.dt %>%
     dplyr::filter(., repeated > 1) %>%
@@ -197,10 +206,12 @@ saveRDS(articles.flt.df, "Y:/PPA-SNA/input_data/news_crawled/ppa_pt_en_1_jun_21.
   
   ## 5) STEMMING
   # encuentro las raices de las palabras
-  mycorpus_stem<-tokens_wordstem(mycorpus_sw, language = "en")
-  mycorpus[10]
+  mycorpus_stem<-tokens_wordstem(mycorpus_sw, language = "pt")
+  mycorpus[1]
   mycorpus_sw[10]
   mycorpus_stem[10]
+  
+  #tokens_replace(mycorpus_sw, pattern = lexicon::hash_lemmas$token, replacement = lexicon::hash_lemmas$lemma)
   
   dtm_stem <- dfm(mycorpus_stem)
   dtm_stem
@@ -214,13 +225,13 @@ saveRDS(articles.flt.df, "Y:/PPA-SNA/input_data/news_crawled/ppa_pt_en_1_jun_21.
   
   ##remuevo stems no frecuentes, en este caso que aparezcan en menos de 10 titulos 
   #y por lo menos en en cinco titulos distintos
-  dtm_f10<-dfm_trim(dtm_w2, min_termfreq = 8, min_docfreq = 5)
+  dtm_f10<-dfm_trim(dtm_w2, min_termfreq = 3, min_docfreq = 3)
   dtm_f10
   
   dtm_sw <- dtm_f10
   ## exploramos la document term matrix
   #las palabras mas frecuentes
-  topfeatures(dtm_sw, 10)  
+  topfeatures(dtm_sw, 60)  
   ## similarity
   # es algo parecido a una correlacion calculada sobre palabras
   # que tanto quedan asociadas las palabras entre ellas?
@@ -238,16 +249,19 @@ saveRDS(articles.flt.df, "Y:/PPA-SNA/input_data/news_crawled/ppa_pt_en_1_jun_21.
   sim <- quanteda.textstats::textstat_simil(dtm_sw, margin = "features", 
                         method = "correlation")
   
-  
   library(GGally)
   
-  ggcorr(data = NULL, cor_matrix = as.matrix(sim[freqfeatures, ]), nbreaks=10, palette='RdBu', label=TRUE, label_size=4, 
-         label_color='black', label_round = 2)
+  gcor <- ggcorr(data = NULL, cor_matrix = as.matrix(sim[freqfeatures, freqfeatures]), 
+           nbreaks=10, palette='RdBu', label=T, label_size= 1.5,layout.exp = 0 ,
+         label_color='black', label_round = 1, digits = 1,size = 2)
+  
+  ggsave(filename = "D:/OneDrive - CGIAR/Documents/PPA 2021/news_downloaded/word_corr_plot.png", plot= gcor, dpi = 400, units="in", width=8, height=5)
+  
   
   library(RColorBrewer)
   
-  textplot_wordcloud(dtm_sw, min_count = 15, random_order = FALSE,
-                     rotation = .25, min_size =1, max_size = 5, max_words = 39,
+  quanteda.textplots::textplot_wordcloud(dtm_sw, min_count = 15, random_order = FALSE,
+                     rotation = .25, min_size =1, max_size = 5, max_words = 100,
                      color = RColorBrewer::brewer.pal(8,"Dark2"))
   
   
@@ -284,8 +298,9 @@ saveRDS(articles.flt.df, "Y:/PPA-SNA/input_data/news_crawled/ppa_pt_en_1_jun_21.
   
   library(udpipe)   
   ## First step: Take the Spanish udpipe model and annotate the text. 
-  ## Note: this takes about 3 minutes   
-  ud_model <- udpipe_download_model(language = "portuguese-gsd")  
+  ## Note: this takes about 3 minutes  
+  #"portuguese-gsd"
+  ud_model <- udpipe_download_model(language = "english-ewt")  
   ud_model <- udpipe_load_model(ud_model$file_model)   
   
   
@@ -307,6 +322,8 @@ saveRDS(articles.flt.df, "Y:/PPA-SNA/input_data/news_crawled/ppa_pt_en_1_jun_21.
     as_tibble %>% 
     dplyr::filter(if_all(starts_with("term"), ~ . != "amazônia")) %>% 
     mutate(key = paste(term1, term2), key = factor(key)) %>% 
+    filter(!term1 %in% c("grant", "hq")) %>% 
+    filter(!term2 %in% c("grant", "hq")) %>% 
     arrange(desc(cooc)) %>%
     head(., 20) %>% 
     ggplot(., aes(x =  reorder(key, cooc), y = cooc))+
@@ -316,11 +333,77 @@ saveRDS(articles.flt.df, "Y:/PPA-SNA/input_data/news_crawled/ppa_pt_en_1_jun_21.
     xlab(element_blank())+
     ylab("Counts")
     #barchart(key ~ cooc, data =., col = "cadetblue", main = "Keywords - simple noun phrases", xlab = "Frequency")
+##### crear grafico de redes
+  ScaleWeight <- function(x, lambda) {
+    x / lambda
+  }
   
-  #
+  network <-  stats %>% 
+    as_tibble %>% 
+    dplyr::filter(if_all(starts_with("term"), ~ . != "amazônia")) %>% 
+    filter(!term1 %in% c("abrir", "janela", "clique")) %>% 
+    mutate(weight = ScaleWeight(x = cooc, lambda = 2E3)) %>% 
+    arrange(desc(cooc)) %>%
+    head(., 60) %>% 
+    graph_from_data_frame(directed = FALSE)
+  
+  V(network)$degree <- strength(graph = network)
+  
+  # Compute the weight shares.
+  E(network)$width <- E(network)$weight/max(E(network)$weight)
+  
+ 
+  net1 <-  intergraph::asNetwork(simplify(network))
+  nplot <- ggnet2(net1,
+                  size = 100*V(network)$degree, 
+                  shape = 19,
+                  mode = "fruchtermanreingold", 
+                  label = V(network)$name,
+                  label.alpha = 1,
+                  node.color = "dodgerblue",
+                  label.size = 4,
+                  edge.size = 1.5*E(network)$width,
+                  arrow.size = 5,
+                  edge.color = "grey40",
+                  edge.alpha = 0.5,
+                  arrow.gap = 0.025)+
+    scale_fill_manual()+
+    theme(legend.position = "none")
+ 
+  ggsave(filename = "D:/OneDrive - CGIAR/Documents/PPA 2021/web_scp_results/wb_scp_21_jul_20_ago", plot= nplot, dpi = 400, units="in", width=8, height=5)
+ 
+  
+  net <- network
+  net_mtrs <- list()
+  net_mtrs$general_metrics<- tibble(Metric = c("density", "centraBetw", "centraDeg", "modularidad", "meanDegree", "transitiv", "assorta", "EigenValue"),
+         Value  = c(igraph::edge_density(net),
+                    igraph::centralization.betweenness(net)$centralization,
+                    igraph::centralization.degree (net, mode = "all")$centralization,
+                    igraph:: cluster_walktrap(net) %>% igraph::modularity(),
+                    mean(igraph::degree(net, mode="all", normalized = F)),
+                    igraph::transitivity(net),
+                    igraph::assortativity.degree(net, directed = F),
+                    eigen_centrality(net, directed = F)$value
+         )) %>%
+    dplyr::mutate_if(is.numeric, round, digits = 2) %>%
+    data.frame() 
+  
+  net_mtrs$indivicual_metrics <- tibble(nodes_id = V(net)$name) %>% 
+    dplyr::mutate(degree         = igraph::degree(net, mode="all", normalized = F),
+                  in_degree      = igraph::degree(net, v = V(net), mode = "in"),
+                  out_degree     = igraph::degree(net, v = V(net), mode = "out"),
+                  betwe          = igraph::betweenness(net) %>% round(.,1),
+                  ClusWalk       = igraph::cluster_walktrap(net) %>% membership(),
+                  transitivLocal = igraph::transitivity(net, type = "local")  %>% round(.,2),
+                  Eigen_centr    = igraph::eigen_centrality(net, directed = F)$vector %>%  round(.,2)
+    ) 
+  writexl::write_xlsx(net_mtrs, "D:/OneDrive - CGIAR/Documents/PPA 2021/web_scp_results/wb_scp_21_jul_20_ago/word_net_mtrs_resultados_agosto.xlsx")
   
   
-  x <- x[-which(x$token %in% c("","\"",stopwords.es, stopwords.add)),] 
+  
+  
+  
+  x <- x[-which(x$token %in% c("", ".", ",","\"",stopwords.es, stopwords.add)),] 
   x <- d
   
   ## Using a sequence of POS tags (noun phrases / verb phrases)
@@ -329,7 +412,7 @@ saveRDS(articles.flt.df, "Y:/PPA-SNA/input_data/news_crawled/ppa_pt_en_1_jun_21.
                             pattern = "(N|AD)*N(P+D*(N|AD)*A)*", 
                             is_regex = TRUE, detailed = FALSE,
                             ngram_max = 3)
-  stats <- subset(stats, ngram == 3 & freq > 100 | stats$keyword == "bolsonaro")
+  stats <- subset(stats, ngram == 1 & freq > 10 )
   stats$key <- factor(stats$keyword, levels = rev(stats$keyword))
   barchart(key ~ freq, data = head(stats, 20), col = "cadetblue", 
            main = "Keywords - Barchart", xlab = "Frequency")
@@ -348,4 +431,30 @@ saveRDS(articles.flt.df, "Y:/PPA-SNA/input_data/news_crawled/ppa_pt_en_1_jun_21.
   ggplot(.,  aes(x = day, y = Freq, group = 1)) + geom_line() + geom_point()
   
 
+  
+  news.flt.dt <- readRDS( "D:/OneDrive - CGIAR/Documents/PPA 2021/web_scp_results/wb_scp_1_jun_21/ppa_pt_en_1_jun_21.rds")
+   
+  news.flt.dt <- news.flt.dt %>% 
+    dplyr::filter(language == "portuguese") %>% 
+    mutate(freq_words = NA)
+  
+  
+for(i in 1:nrow(news.flt.dt)){
+  news.flt.dt$freq_words[i] <- dtm_f10[i,] %>%
+    t() %>%
+    convert(., "data.frame") %>% 
+    rename_with(., function(i){gsub("[0-9]+", "", i)}) %>% 
+    arrange(desc(text)) %>% 
+    slice(1:3) %>% 
+    pull(doc_id) %>% 
+    paste(., sep = "-", collapse = "-") 
+}
+  
+  news.flt.dt %>% 
+    dplyr::select(url, title, text, language, thread.site_type,freq_words ) %>% 
+    write_csv("D:/OneDrive - CGIAR/Documents/PPA 2021/web_scp_results/wb_scp_1_jun_21/freq_words_per_new_julio.csv")
+
+  
+  
+  
   

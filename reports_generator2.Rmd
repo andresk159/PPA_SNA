@@ -5549,9 +5549,7 @@ mtrs %>%
 nt1 <- read_excel(xls.file, sheet = "R2_investimento") %>% 
   dplyr::filter( !(R_Start_ID == 27 & R_Start_ID_ego == "a" & R_Destiny_ID == 38 &   R2b == 6)) %>% 
   dplyr::filter( !(R_Start_ID == 27 & R_Start_ID_ego == "a" & R_Destiny_ID == 59 &   R2b == 6)) 
-
-
-
+ 
 dups <- nt1 %>% 
   dplyr::mutate(id = paste0(R_Start_ID, "-", R_Destiny_ID)) %>% 
   dplyr::mutate(dup = duplicated(id)) %>% 

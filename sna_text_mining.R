@@ -5,7 +5,7 @@
 
 
 #### import packages###
-install.packages(pacman); library(pacman)
+install.packages("pacman"); library(pacman)
   pacman::p_load(httr, jsonlite, geojson, geojsonlint, httpuv, rtweet, tidyverse, zoo, tidytext, 
                  qdapRegex, readr, stringi, spelling, hunspell, ggplot2, udpipe, stringdist, stopwords,
                  quanteda, GGally, widyr, SnowballC)
@@ -144,8 +144,8 @@ all <- twt_data2 %>%
 
 #calculate some metrics to summarize the data
 
-key_words <- c("Conservação", "biodiversidade", "ambientais", "impacto","sustentabilidade" ,"sustentável", "sociobio", 
-               "sociobiodiversidade", "amazonas", "Amazônia")
+key_words <- c("Conserva??o", "biodiversidade", "ambientais", "impacto","sustentabilidade" ,"sustent?vel", "sociobio", 
+               "sociobiodiversidade", "amazonas", "Amaz?nia")
 
 scores <- all %>% dplyr::select(c_name, tml_es:tml_pt)%>%
   dplyr::mutate(score1 = purrr::map(tml_pt, function(i){
