@@ -8,6 +8,7 @@ knit: (function(inputFile, encoding) {
 output: 
   word_document:
     toc: true
+    
  
 ---
 

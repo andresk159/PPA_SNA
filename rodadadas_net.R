@@ -1439,7 +1439,8 @@ list(agregados = aggregados %>%
 ###############################################
 
 rodadas_raw_files <- list(rodada_2019 = raw_list_2019,
-                          rodada_2020 = raw_list_2020)
+                          rodada_2020 = raw_list_2020,
+                          rodada_2021 = raw_list_2021)
 
 
 Rc_freqs <- list(
@@ -1483,7 +1484,8 @@ Rc_freqs <- list(
     
     ret <- tibble(as.data.frame(ends(r, E(r), names = T))) %>% 
       dplyr::mutate(ids = paste0(V1, "-", V2)) %>% 
-      dplyr::left_join(., Rc) %>% 
+      dplyr::left_join(., Rc) %>%
+      tidyr::drop_na() %>% 
       dplyr::group_by(V1, Rc) %>%
       dplyr::tally() %>% 
       dplyr::ungroup() %>% 
@@ -1549,6 +1551,7 @@ Rc_freqs <- list(
     ret <- tibble(as.data.frame(ends(r, E(r), names = T))) %>% 
       dplyr::mutate(ids = paste0(V1, "-", V2)) %>% 
       dplyr::left_join(., Rc) %>% 
+      drop_na() %>% 
       dplyr::group_by(V1, Rc) %>%
       dplyr::tally() %>% 
       dplyr::ungroup() %>% 
@@ -1571,12 +1574,84 @@ Rc_freqs <- list(
                     conteo = n,
                     freq) 
     
+    
     return(ret)
   }) %>% 
+    bind_rows(),
+  rodada_2021 = lapply(c("negocios", "invest", "coop", "colab"), function(i){
+    
+    ano <- 2021
+    rodada <- paste0("rodada" , "_", ano)
+    if(i == "negocios"){
+      query <- "R[0-9]b" 
+      var <- "R1b"
+    }else{
+      query <- "R[0-9]c"
+      
+      if(i == "invest"){
+        var <- "R2c"
+      }else if(i == "coop"){
+        var <- "R3c"
+      }else{
+        var <- "R4c"
+      }
+      
+    }
+    
+    rd <- rodadas_raw_files[[rodada]]
+    
+    dm <- i
+    
+    Rc <-  rd[grepl(dm, names(rd))]%>% 
+      purrr::pluck(1) %>% 
+      dplyr::mutate(ids = paste0(R_Start_ID ,"-", R_Destiny_ID)) %>% 
+      dplyr::select( - contains("comentario")) %>% 
+      dplyr::select(ids, Rc = matches(query))
+    
+    pht <- list.files(paste0("D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/rodada_", ano  ),
+                      pattern = paste0("^", i),
+                      full.names = T) %>% 
+      .[grepl("_standard_net_graph.rds", tolower(.))]
+    
+    r <- readRDS(pht)
+    
+    ret <- tibble(as.data.frame(ends(r, E(r), names = T))) %>% 
+      dplyr::mutate(ids = paste0(V1, "-", V2)) %>% 
+      dplyr::left_join(., Rc) %>% 
+      drop_na() %>% 
+      dplyr::group_by(V1, Rc) %>%
+      dplyr::tally() %>% 
+      dplyr::ungroup() %>% 
+      dplyr::group_by(V1) %>% 
+      dplyr::summarise(Rc, n, freq = round(prop.table(n),3)) %>% 
+      dplyr::ungroup() %>% 
+      dplyr::mutate(across(everything(.), as.character),
+                    cat = dm,
+                    time = ano) %>% 
+      dplyr::left_join(., get_questions_opts(data= preguntas$rodada_2021,
+                                             var = var,
+                                             var_lab = "label"), by = c("Rc" = "Opcoes_numero")) %>% 
+      dplyr::left_join(., groups[[rodada]] %>% dplyr::select( ID_node, Nome, V1), by = c("V1" = "ID_node")) %>%
+      tidyr::drop_na() %>% 
+      dplyr::select(R_Start_ID = V1,
+                    Nome,
+                    group = V1.y,
+                    time,
+                    cat,
+                    label,
+                    conteo = n,
+                    freq) 
+    
+    
+    return(ret)
+  })%>% 
     bind_rows()
 )
 
 
+Rc_freqs$rodada_2020 %>% 
+  dplyr::filter(cat == "invest" ) %>% 
+  pull(label) %>% table()
 
 writexl::write_xlsx(Rc_freqs, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/Rc_freqs.xlsx")
 
