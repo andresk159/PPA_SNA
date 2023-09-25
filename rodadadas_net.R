@@ -251,7 +251,6 @@ net_graphs_orgtype <- function(edge_list, groups, type_org, preguntas, out_file)
 }
 
 
-
 net_metrics <- function(edge_list_raw, net, net_no_dir, entrevistados, type_org, groups, preguntas, role_ppa, Ra, Rb, Rc){
 
   
@@ -445,23 +444,23 @@ net_metrics <- function(edge_list_raw, net, net_no_dir, entrevistados, type_org,
            org_type_end = ifelse(is.na(org_type_end), "not_found", org_type_end)) 
   
   to_add1 <- start_up_links_counts %>% 
-    dplyr::filter(org_type_start == "Start-up company" | org_type_end == "Start-up company") %>% 
+    dplyr::filter(org_type_start == "Company - Startup" | org_type_end == "Company - Startup") %>% 
     dplyr::pull(n) %>% 
     sum
   to_add2 <- start_up_links_counts %>%
-    dplyr::filter(org_type_start != "Start-up company" ) %>% 
-    dplyr::filter(org_type_end != "Start-up company") %>% 
+    dplyr::filter(org_type_start != "Company - Startup" ) %>% 
+    dplyr::filter(org_type_end != "Company - Startup") %>% 
     dplyr::pull(n) %>% 
     sum
   
-  removed_startup_links_freq <- data.frame(org_type = c("Start-up company", "diff from Start-up company", "Total"),
+  removed_startup_links_freq <- data.frame(org_type = c("Company - Startup", "diff from Company - Startup", "Total"),
              counts = c(to_add1, to_add2, to_add1+to_add2),
              frequency = c(to_add1/(to_add1+to_add2), to_add2/(to_add1+to_add2), 1 ) ) %>% 
     dplyr::mutate(frequency = paste0(round(frequency*100, 3),"%"))
   
   start_up_links_counts %>%
-    dplyr::filter(org_type_start != "Start-up company" ) %>% 
-    dplyr::filter(org_type_end != "Start-up company") %>% 
+    dplyr::filter(org_type_start != "Company - Startup" ) %>% 
+    dplyr::filter(org_type_end != "Company - Startup") %>% 
     dplyr::pull(n) %>% 
     sum
   
@@ -899,13 +898,16 @@ correct_question_format <- function(input_data, var_opts, var ){
 
 ### cargar archivos de datos
 
-rodada_2019 <- "D:/OneDrive - CGIAR/Documents/Database SNA PPA 2019 final 2020 06 08.xlsx"
+rodada_2019 <- "D:/OneDrive - CGIAR/Documents/PPA 2021/Database SNA PPA 2019 final 2020 06 08.xlsx"
 rodada_2020 <- "D:/OneDrive - CGIAR/Documents/PPA 2021/Database SNA PPA 2020 A_B (21ago21)_para_CIAT.xlsx"
 rodada_2021 <- "D:/OneDrive - CGIAR/Documents/PPA 2021/Database SNA PPA 2021-2022 (21set22)_completa-Encaminhado CIAT.xlsx"
+rodada_2022 <- "D:/OneDrive - CGIAR/Documents/PPA 2021/Database SNA PPA 2022-2023 (14set23).xlsx"
+
 
 sheets_2019 <- excel_sheets(rodada_2019)
 sheets_2020 <- excel_sheets(rodada_2020)
 sheets_2021 <- excel_sheets(rodada_2021)
+sheets_2022 <- excel_sheets(rodada_2022)
 
 raw_list_2019 <- lapply(sheets_2019, function(i){
   readxl::read_xlsx(rodada_2019, sheet = i)
@@ -919,20 +921,28 @@ raw_list_2021 <- lapply(sheets_2021, function(i){
   readxl::read_xlsx(rodada_2021, sheet = i, col_types = "text")
 })
 
+raw_list_2022 <- lapply(sheets_2022, function(i){
+  readxl::read_xlsx(rodada_2022, sheet = i, col_types = "text")
+})
+
 names(raw_list_2019) <- sheets_2019
 names(raw_list_2020) <- sheets_2020
 names(raw_list_2021) <- sheets_2021
+names(raw_list_2022) <- sheets_2022
 
 
 
-opts <- raw_list_2021[[grep("Todos_detalhado", names(raw_list_2021))]]
+opts <- raw_list_2022[[grep("Todos_detalhado", names(raw_list_2022))]]
 #opts <- raw_list_2020[[grep("Todos_detalhado", names(raw_list_2020))]]
 #names(opts2)
 
-preguntas <- lapply(c("2019", "2020", "2021"), function(rodada){
+years <- c("2019", "2020", "2021", "2022")
+rodadas_names <- c("rodada_2019", "rodada_2020", "rodada_2021", "rodada_2022")
+
+preguntas <- lapply(years, function(rodada){
   
   prefix <- "opcoes" # or startups
-  fixed <- "2021"
+  fixed <- years[which.max(as.numeric(years))]
   
   opts <- opts %>% 
     dplyr::filter(Variavel != "ID_node") %>% 
@@ -982,11 +992,11 @@ preguntas <- lapply(c("2019", "2020", "2021"), function(rodada){
   return(preguntas)
   
 })
-names(preguntas) <- c("rodada_2019", "rodada_2020", "rodada_2021")
+names(preguntas) <- rodadas_names
 
-groups <- lapply(c("2019", "2020", "2021"), function(rodada){
+groups <- lapply(years, function(rodada){
   
-  groups <- raw_list_2021[[grep("Orgs_grupo_rodadas", names(raw_list_2021))]] %>%
+  groups <- raw_list_2022[[grep("Orgs_grupo_rodadas", names(raw_list_2022))]] %>%
     dplyr::select(ID_node, Nome, matches(rodada)) %>%
     dplyr::mutate_all(as.character) %>% 
     dplyr::rename_at(vars(matches(rodada)), function(i){ gsub("_[0-9]+", "", i)}) %>% 
@@ -996,9 +1006,9 @@ groups <- lapply(c("2019", "2020", "2021"), function(rodada){
   
   return(groups)
 })
-names(groups) <- c("rodada_2019", "rodada_2020", "rodada_2021")
+names(groups) <- rodadas_names
 
-entrevistados <- lapply(c("rodada_2019", "rodada_2020", "rodada_2021"), function(i){
+entrevistados <- lapply(rodadas_names, function(i){
   cat(i)
   entrevistados <- groups[[i]] %>% 
     dplyr::left_join(., preguntas[[i]] %>% 
@@ -1013,10 +1023,10 @@ entrevistados <- lapply(c("rodada_2019", "rodada_2020", "rodada_2021"), function
   cat("Total de entrevistados en",i, "es de: ", nrow(entrevistados), "\n")
  return(entrevistados) 
 })
-names(entrevistados) <- c("rodada_2019", "rodada_2020", "rodada_2021")
+names(entrevistados) <- rodadas_names
 
 
-gr_colors <- lapply(c("rodada_2019", "rodada_2020", "rodada_2021"), function(i){
+gr_colors <- lapply(rodadas_names, function(i){
   
   gr_colors <- groups[[i]] %>% 
     dplyr::select(V1) %>% 
@@ -1031,42 +1041,71 @@ gr_colors <- lapply(c("rodada_2019", "rodada_2020", "rodada_2021"), function(i){
   
   return(gr_colors)
 })
-names(gr_colors) <- c("rodada_2019", "rodada_2020", "rodada_2021")
+names(gr_colors) <- rodadas_names
 
-out_dirs <- lapply(c("rodada_2019", "rodada_2020", "rodada_2021"), function(i){
+out_dirs <- lapply(rodadas_names, function(i){
   
   ret <- paste0("D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/", i)
   if(!file.exists(ret)){dir.create(ret, recursive = T)}
   return(ret)
 })
-names(out_dirs) <- c("rodada_2019", "rodada_2020", "rodada_2021")
+names(out_dirs) <-rodadas_names
 
 type_org <-  list(
   # raw_list_2020[[grep("Empresas_orgs_atributos", names(raw_list_2020))]] 
+  # dado unas pequeñas inconsistensias en los tipos y subtipos de las empresas
+  # se debe fijar las variables preguntas y Empresas_org_Atributos por las de la rodada_2022
+  # y se debe usar V39c en lugar de V39b
+  #sin embargo se seguira usando la etiqueta V39b para evitar problemas
+  #con los scripts
   
-  rodada_2019 =raw_list_2019[[grep("Empresas_orgs_atributos", names(raw_list_2019))]] %>% 
-    dplyr::select(starts_with("ID"), V39a, V39b) %>%
-    dplyr::rename(ID_node = ID)  %>% 
+  rodada_2019 = raw_list_2022[[grep("Empresas_orgs_atributos", names(raw_list_2022))]] %>% 
+    dplyr::select(starts_with("ID"), V39a, V39c) %>% 
+    #raw_list_2019[[grep("Empresas_orgs_atributos", names(raw_list_2019))]] %>% 
+    #dplyr::select(starts_with("ID"), V39a, V39b) %>%
+    #dplyr::select(starts_with("ID")) %>% 
+    #dplyr::rename(ID_node = ID)  %>% 
     dplyr::mutate_all(as.character) %>% 
+    #dplyr::left_join(., raw_list_2022[[grep("Empresas_orgs_atributos", names(raw_list_2022))]] %>% 
+     #                  dplyr::select(starts_with("ID"), V39a, V39c), by = "ID_node") %>% 
     dplyr::left_join(., groups$rodada_2019 %>% dplyr::select(ID_node, Nome, V1)) %>% 
     dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2019, var = "V39a", var_lab = "Type of organization"), by = c("V39a" = "Opcoes_numero")) %>% 
-    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2019, var = "V39b", var_lab = "Subtype of organization"), by = c("V39b" = "Opcoes_numero")),
+    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2022, var = "V39c", var_lab = "Subtype of organization"), by = c("V39c" = "Opcoes_numero")) %>% 
+    dplyr::rename("V39b" = "V39c"),
   
-  rodada_2020 = raw_list_2020[[grep("orgs_atributos_all", names(raw_list_2020))]] %>% 
-    dplyr::select(starts_with("ID"), V39a, V39b) %>%
+  rodada_2020 =  raw_list_2022[[grep("Empresas_orgs_atributos", names(raw_list_2022))]] %>% 
+    dplyr::select(starts_with("ID"), V39a, V39c) %>% 
+    #raw_list_2020[[grep("orgs_atributos_all", names(raw_list_2020))]] %>% 
+    #dplyr::select(starts_with("ID"), V39a, V39b) %>%
+    #dplyr::select(starts_with("ID")) %>% 
     dplyr::mutate_all(as.character) %>% 
+    #dplyr::left_join(., raw_list_2022[[grep("Empresas_orgs_atributos", names(raw_list_2022))]] %>% 
+    #                   dplyr::select(starts_with("ID"), V39a, V39c), by = "ID_node") %>% 
     dplyr::left_join(., groups$rodada_2020 %>% dplyr::select(ID_node, Nome, V1), by = c("ID_node" = "ID_node")) %>% 
     dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2020, var = "V39a", var_lab = "Type of organization"), by = c("V39a" = "Opcoes_numero")) %>% 
-    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2020, var = "V39b", var_lab = "Subtype of organization"), by = c("V39b" = "Opcoes_numero")) ,
+    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2022, var = "V39c", var_lab = "Subtype of organization"), by = c("V39c" = "Opcoes_numero"))%>% 
+    dplyr::rename("V39b" = "V39c") ,
   
-  rodada_2021 = raw_list_2021[[grep("Empresas_orgs_atributos", names(raw_list_2021))]] %>% 
-    dplyr::select(starts_with("ID"), V39a, V39b) %>%
+  rodada_2021 = raw_list_2022[[grep("Empresas_orgs_atributos", names(raw_list_2022))]] %>% 
+    dplyr::select(starts_with("ID"), V39a, V39c) %>% 
+    #raw_list_2021[[grep("Empresas_orgs_atributos", names(raw_list_2021))]] %>% 
+    #dplyr::select(starts_with("ID"), V39a, V39b) %>%
+    #dplyr::select(starts_with("ID")) %>% 
     dplyr::mutate_all(as.character) %>% 
+    #dplyr::left_join(., raw_list_2022[[grep("Empresas_orgs_atributos", names(raw_list_2022))]] %>% 
+    #                   dplyr::select(starts_with("ID"), V39a, V39c), by = "ID_node") %>% ##
     dplyr::left_join(., groups$rodada_2021 %>% dplyr::select(ID_node, Nome, V1), by = c("ID_node" = "ID_node")) %>% 
     dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2021, var = "V39a", var_lab = "Type of organization"), by = c("V39a" = "Opcoes_numero")) %>% 
-    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2021, var = "V39b", var_lab = "Subtype of organization"), by = c("V39b" = "Opcoes_numero")) 
+    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2022, var = "V39c", var_lab = "Subtype of organization"), by = c("V39c" = "Opcoes_numero")) %>% 
+    dplyr::rename("V39b" = "V39c"),
   
-  
+  rodada_2022 = raw_list_2022[[grep("Empresas_orgs_atributos", names(raw_list_2022))]] %>% 
+    dplyr::select(starts_with("ID"), V39a, V39c) %>%
+    dplyr::mutate_all(as.character) %>% 
+    dplyr::left_join(., groups$rodada_2022 %>% dplyr::select(ID_node, Nome, V1), by = c("ID_node" = "ID_node")) %>% 
+    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2022, var = "V39a", var_lab = "Type of organization"), by = c("V39a" = "Opcoes_numero")) %>% 
+    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2022, var = "V39c", var_lab = "Subtype of organization"), by = c("V39c" = "Opcoes_numero")) %>% 
+    dplyr::rename("V39b" = "V39c")
   
 )
 
@@ -1095,7 +1134,8 @@ informer <- list(
     dplyr::rename(ID_node = ID),
   
   rodada_2020 = raw_list_2020[[grep("Informer", names(raw_list_2020))]],
-  rodada_2021 = raw_list_2021[[grep("Informer", names(raw_list_2021))]]
+  rodada_2021 = raw_list_2021[[grep("Informer", names(raw_list_2021))]],
+  rodada_2022 = raw_list_2022[[grep("Informer", names(raw_list_2022))]]
 )
 
 role_ppa <- list(
@@ -1124,6 +1164,15 @@ role_ppa <- list(
     dplyr::mutate(label = ifelse(opt == 0, "Not selected", label)) %>% 
     dplyr::select(-opt) %>% 
     tidyr::pivot_wider(., id_cols = c(ID_node, ID_ego), names_from = var, values_from = "label")%>% 
+    dplyr::mutate(across(everything(.), as.character )),
+  
+  rodada_2022 = informer$rodada_2022 %>% 
+    dplyr::select(ID_node, ID_ego, starts_with("V14_")) %>% 
+    tidyr::pivot_longer(., cols = -c(ID_node, ID_ego), names_to = "var", values_to = "opt") %>% 
+    dplyr::left_join(.,get_questions_opts(data = preguntas$rodada_2022 , var = "V14", var_lab = "label"), by = c("var" = "Opcoes_numero")) %>% 
+    dplyr::mutate(label = ifelse(opt == 0, "Not selected", label)) %>% 
+    dplyr::select(-opt) %>% 
+    tidyr::pivot_wider(., id_cols = c(ID_node, ID_ego), names_from = var, values_from = "label")%>% 
     dplyr::mutate(across(everything(.), as.character ))
   
 )
@@ -1133,13 +1182,16 @@ role_ppa <- list(
 ############## REMOVER START'ups ###########################
 ###########################################################
 if(TRUE){
+  #dado unas inconsistencias encontradas y la nueva categorizacion
+  #de la variable V39b por V39c - las start-ups ahora tiene cod. 5
+  #y cambiaron su etiqueta
   raw_list_2019[grepl("^R[0-9]", names(raw_list_2019))]  <-raw_list_2019[grepl("^R[0-9]", names(raw_list_2019))] %>% 
     lapply(., function(l){
       start_ups <- type_org[["rodada_2019"]] %>% 
         dplyr::select(ID_node, V39b, `Subtype of organization`) %>% 
-        dplyr::filter(V39b == 7) %>% 
+        dplyr::filter(V39b == 5) %>% #dplyr::filter(V39b == 5) %>% 
         dplyr::filter(ID_node != "86") %>% 
-        dplyr::filter(`Subtype of organization` == "Start-up company") %>% 
+        dplyr::filter(`Subtype of organization` == "Company - Startup") %>% #dplyr::filter(`Subtype of organization` == "Start-up company")
         dplyr::pull(ID_node)
       
       if(any("R5b_Destiny_ID" %in% names(l))){
@@ -1168,9 +1220,9 @@ if(TRUE){
     lapply(., function(l){
       start_ups <- type_org[["rodada_2020"]] %>% 
         dplyr::select(ID_node, V39b, `Subtype of organization`) %>% 
-        dplyr::filter(V39b == 7)%>%
+        dplyr::filter(V39b == 5)%>% #dplyr::filter(V39b == 7)%>%
         dplyr::filter(ID_node != "86") %>% 
-        dplyr::filter(`Subtype of organization` == "Start-up company") %>% 
+        dplyr::filter(`Subtype of organization` == "Company - Startup") %>% #dplyr::filter(`Subtype of organization` == "Start-up company")
         dplyr::pull(ID_node)
       
       if(any("R5b_Destiny_ID" %in% names(l))){
@@ -1198,9 +1250,9 @@ if(TRUE){
     lapply(., function(l){
       start_ups <- type_org[["rodada_2021"]] %>% 
         dplyr::select(ID_node, V39b, `Subtype of organization`) %>% 
-        dplyr::filter(V39b == 7)%>%
+        dplyr::filter(V39b == 5)%>% #dplyr::filter(V39b == 7)%>%
         dplyr::filter(ID_node != "86") %>% 
-        dplyr::filter(`Subtype of organization` == "Start-up company") %>% 
+        dplyr::filter(`Subtype of organization` == "Company - Startup") %>% # dplyr::filter(`Subtype of organization` == "Start-up company")
         dplyr::pull(ID_node)
       
       if(any("R5b_Destiny_ID" %in% names(l))){
@@ -1222,6 +1274,38 @@ if(TRUE){
       
       return(tmp)
     })
+  
+  
+  raw_list_2022[grepl("^R[0-9]", names(raw_list_2022))] <- raw_list_2022[grepl("^R[0-9]", names(raw_list_2022))] %>% 
+    lapply(., function(l){
+      start_ups <- type_org[["rodada_2022"]] %>% 
+        dplyr::select(ID_node, V39b, `Subtype of organization`) %>% 
+        dplyr::filter(V39b == 5)%>%  #dplyr::filter(V39b == 7)%>%
+        dplyr::filter(ID_node != "86") %>% 
+        dplyr::filter(`Subtype of organization` == "Company - Startup") %>% #Start-up company
+        dplyr::pull(ID_node)
+      
+      if(any("R5b_Destiny_ID" %in% names(l))){
+        names(l)[which(names(l) == "R5b_Destiny_ID")] <- "R_Destiny_ID"
+        control <-TRUE
+      }else{
+        control <- FALSE
+      }
+      
+      tmp <- l %>% 
+        dplyr::filter( !R_Start_ID %in% start_ups) %>% 
+        dplyr::filter( !R_Destiny_ID %in% start_ups) %>% 
+        dplyr::mutate(id = paste0(R_Start_ID, "_", R_Start_ID_ego)) %>%  
+        dplyr::filter(!id  %in% c("18_a", "18_c","76_c")) %>%
+        dplyr::select(-id)
+      if(control){
+        names(tmp)[which(names(tmp) == "R_Destiny_ID")] <- "R5b_Destiny_ID"
+      }
+      
+      return(tmp)
+    })
+  
+  
   
 }
 
