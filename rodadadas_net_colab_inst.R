@@ -119,8 +119,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[['rodada_2022']], 
                    out_file = paste0(out_dirs[[name_rodada]], "/colabInst_standard_net_graph_orgtype.png"))
 
 ###metricas
@@ -276,8 +276,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[['rodada_2022']], 
                    out_file = paste0(out_dirs[[name_rodada]], "/colabInst_standard_net_graph_orgtype.png"))
 
 ###metricas
@@ -457,8 +457,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[['rodada_2022']], 
                    out_file = paste0(out_dirs[[name_rodada]], "/colabInst_standard_net_graph_orgtype.png"))
 
 
@@ -606,8 +606,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[['rodada_2022']], 
                    out_file = paste0(out_dirs[[name_rodada]], "/colabInst_standard_net_graph_orgtype.png"))
 
 

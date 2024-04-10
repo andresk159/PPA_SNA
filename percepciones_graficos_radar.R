@@ -188,9 +188,41 @@ sec_1$slide_8_2022 <- lapply(gr1_vars, function(vrs){
 
 names(sec_1$slide_8_2022) <- c("V39a", label_quest)
 
+#graficos y tablas solicitadas por sylvia nov-2023
+heat_map_lst <- lapply(gr1_vars, function(vr){
+  to_ret1 <- lapply(rodadas, function(rd){
+    to_ret <- perceps[[rd]] %>% 
+      dplyr::select(ID_node, !!vr) %>% 
+      dplyr::mutate(across(everything(.), as.character))
+    
+    names(to_ret)[2] <- rd#paste0(names(to_ret)[2], "_", rd)
+    to_ret[which(to_ret[,2] == "0"),] <- NA
+    return(to_ret)
+  } ) %>% 
+    purrr::reduce(., full_join, by = "ID_node") %>% 
+    tidyr::drop_na(ID_node) %>% 
+    dplyr::left_join(., type_org[["rodada_2022"]] %>% 
+                                               dplyr::select(ID_node, Nome), by = "ID_node")
+ 
+   dm <-to_ret1[, grepl("^rodada" ,names(to_ret1))]
+   dm <- apply(dm, 1, function(vec){
+     sq <- c(10000, 1000, 100, 10)
+     to_ret <- ifelse(is.na(vec), NA, sq)
+     return(to_ret)
+   }) %>% t
+   to_ret1$order <- rowSums(dm, na.rm = T)
+   
+   to_ret2 <- to_ret1 %>% 
+     dplyr::arrange(desc(order)) %>% 
+     dplyr::select(Nome, ID_node, everything(.),  -order,)
+  return(to_ret2)
+}) 
 
+names(heat_map_lst) <- gr1_vars
 
-##### tablas para los graficos de radar
+## hacer los graficos
+
+  ### tablas para los graficos de radar
 #### preguntas strongly agree
 
 
@@ -601,6 +633,191 @@ perc_v46_v49$V49 <- desemp %>%
   dplyr::left_join(., get_questions_opts(data =  preguntas[["rodada_2022"]], var = "V49", var_lab= "lab"),  by =  c("var"  = "Opcoes_numero")) %>% 
   dplyr::select(`Type of organization` , lab, counts, total, perc)%>% 
   dplyr::mutate(across(where(is.numeric), function(i){ifelse(is.na(i), 0, i)}))
+
+############################################################
+####### V28b - V28c - V28d - V28e - V28f - V28g ###########
+##########################################################
+
+perc_v28b_v28g<- list()
+
+gr1_vars <- paste0("V28", c("b", "c", "d", "e", "f", "g"))
+lapply(gr1_vars, function(vr){
+  print(vr)
+  to_ret <- lapply(c("rodada_2021", "rodada_2022"), function(rd){
+    df <- perceps[[rd]]
+    df <- df %>% 
+      dplyr::select(ID_node , starts_with(vr)) %>% 
+      tidyr::pivot_longer(., -ID_node, names_to = "var", values_to = "val") %>% 
+      tidyr::drop_na(val) %>% 
+      dplyr::group_by(var, val) %>% 
+      dplyr::summarize(count = n()) %>% 
+      dplyr::ungroup() %>% 
+      dplyr::group_by(var) %>% 
+      dplyr::mutate(total = sum(count),
+                    val = ifelse(val == 0, "No", "Yes"),
+                    freq = (count/total)) %>% 
+      dplyr::ungroup() %>% 
+      dplyr::left_join(.,
+                       get_questions_opts(data = preg, var = vr, var_lab = "lab", lan = "en" ),
+                       by = c("var" = "Opcoes_numero")) %>% 
+      dplyr::select(lab, val,count) %>% 
+      tidyr::pivot_wider(., names_from = "lab", values_from = "count") %>% 
+      dplyr::mutate(rodada  = rd)
+    
+    return(df)
+  }) %>% 
+    bind_rows() %>% 
+    dplyr::mutate(across(everything(.), .fns = tidyr::replace_na, replace = 0))
+  
+  return(to_ret)
+})
+
+
+###################################
+###         V19a       ###########
+#################################
+
+### las start-ups son las mimas para todos los años dado los cambios sugeridos por carlos y JF en 2023
+start_ups <- type_org[["rodada_2022"]] %>% 
+  dplyr::select(ID_node, V39b, `Subtype of organization`) %>% 
+  dplyr::filter(V39b == 5) %>% #dplyr::filter(V39b == 5) %>% 
+  dplyr::filter(ID_node != "86") %>% 
+  dplyr::filter(`Subtype of organization` == "Company - Startup") %>% #dplyr::filter(`Subtype of organization` == "Start-up company")
+  dplyr::pull(ID_node)
+
+
+## se eliminan los nodos para cada rodada segun lo establecido en los analisis de redes por carlos, Jf y silvya
+v19a_list <- list(
+
+"rodada_2019" = raw_list_2019[[grep("Objetivo_org", names(raw_list_2019))]] %>% 
+  dplyr::mutate(id = paste0(ID , "_", ID_ego)) %>% 
+  dplyr::filter(!id  %in% c("42_a","42_c","49_a","49_b","76_a")) %>% 
+  dplyr::select(-id) %>% 
+  dplyr::filter(!ID %in% start_ups) %>% 
+  dplyr::rename(ID_node = ID),
+
+
+
+"rodada_2020" = raw_list_2020[[grep("V19a_Obj_Motivação_org", names(raw_list_2020))]] %>% 
+  dplyr::mutate(id = paste0(ID_node , "_", ID_ego )) %>%  
+  dplyr::filter(!id  %in% c("18_b", "18_c", "42_b","42_c","43_b" ,
+                            "49_b","49_c","76_c", "76_d","84_b", "84_c")) %>%
+  dplyr::select(-id) %>% 
+  dplyr::filter(!ID_node  %in% start_ups),
+
+
+"rodada_2021" = raw_list_2021[[grep("V19a_Obj_Motivação_org", names(raw_list_2021))]] %>% 
+  dplyr::mutate(id = paste0(ID_node , "_", ID_ego )) %>%  
+  dplyr::filter(!id  %in% c("18_b", "18_c","76_c")) %>%
+  dplyr::select(-id) %>% 
+  dplyr::filter(!ID_node  %in% start_ups),
+
+
+"rodada_2022" = raw_list_2022[[grep("V19a_Obj_Motivação_org", names(raw_list_2022))]] %>% 
+  dplyr::mutate(id = paste0(ID_node , "_", ID_ego )) %>%  
+  dplyr::filter(!id  %in% c("18_a", "18_c","76_c")) %>%
+  dplyr::select(-id) %>% 
+  dplyr::filter(!ID_node  %in% start_ups)
+
+)
+
+v19a_counts <- lapply(c("rodada_2019", "rodada_2020" ,"rodada_2021", "rodada_2022"), function(rd){
+  
+  df <- v19a_list[[rd]]
+  vr <- "V19a"
+  df <- df %>% 
+    dplyr::select(ID_node , starts_with("V19a")) %>% 
+    tidyr::pivot_longer(., -ID_node, names_to = "var", values_to = "val") %>% 
+    tidyr::drop_na(val) %>% 
+    dplyr::group_by(var, val) %>% 
+    dplyr::summarize(count = n()) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::group_by(var) %>% 
+    dplyr::mutate(total = sum(count),
+                  val = ifelse(val == 0, "No", "Yes"),
+                  freq = (count/total)) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::left_join(.,
+                     get_questions_opts(data = preg, var = vr, var_lab = "lab", lan = "en" ),
+                     by = c("var" = "Opcoes_numero")) %>% 
+    dplyr::select(lab, val,count) %>% 
+    tidyr::pivot_wider(., names_from = "lab", values_from = "count") %>% 
+    dplyr::mutate(rodada  = rd)
+  
+  return(df)
+})
+
+names(v19a_counts) <- c("rodada_2019", "rodada_2020" ,"rodada_2021", "rodada_2022")
+
+writexl::write_xlsx(v19a_counts, path = paste0(out_path, "V19a_counts.xlsx"))
+
+##########################
+###### HEATMAP ##########
+########################
+
+
+counts_order <- lapply(c("rodada_2019", "rodada_2020" ,"rodada_2021", "rodada_2022"), function(rd){
+  
+  entrevistados[[rd]] %>% 
+    dplyr::select(ID_node, Nome) %>% 
+    dplyr::mutate(rodada = rd)
+  
+ 
+}) %>% 
+  bind_rows() %>% 
+  dplyr::group_by( Nome) %>% 
+  dplyr::reframe(count = n(),
+                 ID_node = unique(ID_node),
+                 rodada  = paste0(rodada, collapse = "-")) %>% 
+  dplyr::arrange(desc(count)) %>% 
+  dplyr::select(ID_node, count)
+
+x11()
+to_plot <- lapply(c("rodada_2019", "rodada_2020" ,"rodada_2021", "rodada_2022"), function(rd){
+  to_ret <- perceps[[rd]] %>% 
+    dplyr::select(ID_node ,  V23) %>% 
+    dplyr::mutate(rodada = rd) %>% 
+    dplyr::mutate(across(everything(.), as.character))
+  
+  return(to_ret)
+}) %>% 
+  bind_rows() %>% 
+  dplyr::left_join(., type_org_v2[[4]] %>% dplyr::select(ID_node, Nome), by = c("ID_node")) %>% 
+  dplyr::left_join(., counts_order) %>% 
+  dplyr::arrange(desc(count)) %>% 
+  dplyr::mutate(rodada = str_extract(rodada, "[0-9]+"))
+  
+g1 <- to_plot %>% 
+  dplyr::mutate(Nome = factor(Nome, levels = rev(unique(to_plot$Nome)))) %>% 
+  ggplot(aes(x = rodada, y = Nome, fill = V23))+
+  geom_tile(colour="white", size=0.25)+
+  theme_bw(base_size=8)+
+  scale_y_discrete(expand=c(0, 0))+
+  scale_x_discrete(expand=c(0, 0),
+                   breaks=c("2019", "2020", "2021", "2022"))+
+  scale_fill_brewer(palette = "YlOrRd" )+
+  #theme options
+  theme(
+    #bold font for legend text
+    legend.text=element_text(face="bold"),
+    #set thickness of axis ticks
+    axis.ticks=element_line(size=0.6),
+    #remove plot background
+    plot.background=element_blank(),
+    #remove plot border
+    panel.border=element_blank()
+  )+
+  coord_fixed(ratio = 0.5)
+
+x11();g1
+ggsave( "C:/Users/acmendez/Downloads/prueba_heatmap.png", g1, dpi = 300, width = 12, height = 8, units = "in")
+
+
+
+
+
+
+
 
 ### no se uso en la rodada 2022
 if(FALSE){

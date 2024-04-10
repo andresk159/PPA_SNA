@@ -5,7 +5,7 @@ pacman::p_load(tidyverse, igraph, readxl, writexl)
 
 root_dir <- "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/"
 
-rodadas <- c("rodada_2019", "rodada_2020", "rodada_2021")
+rodadas <- c("rodada_2019", "rodada_2020", "rodada_2021", "rodada_2022")
 
 ###evolucion by groups grupo C
 
@@ -59,11 +59,10 @@ evolucion_by_gr_grC <- lapply(c("investment_grC", "negocios_grC", "cooptec_grC",
 
 names(evolucion_by_gr_grC) <- c("investment_grC", "negocios_grC", "cooptec_grC", "colabInst_grC", "madre_grC")
 
-writexl::write_xlsx(evolucion_by_gr_grC, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_diapositivas/evolucion_by_grC.xlsx")
+writexl::write_xlsx(evolucion_by_gr_grC, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_informe/rodada_2022/evolucion_by_grC.xlsx")
 
 
 ##### Evolution of the positioning of organization by subtypes 2019-2021
-
 
 
 evolucion_posi_by_subtype <- lapply(c("investment_grC", "negocios_grC", "cooptec_grC", "colabInst_grC", "madre_grC"),
@@ -72,7 +71,7 @@ evolucion_posi_by_subtype <- lapply(c("investment_grC", "negocios_grC", "cooptec
                                 df <- lapply(rodadas, function(rodada){
                                   baseDir <- paste0(root_dir, rodada)
                                   
-                                  cats <- get_questions_opts(data = preguntas$rodada_2021, var = "V39b", var_lab = "Subtype of organization") %>% 
+                                  cats <- get_questions_opts(data = preguntas$rodada_2022, var = "V39c", var_lab = "Subtype of organization") %>% 
                                     add_row(Opcoes_numero = "15" , `Subtype of organization` = "Not participated")
                                   
                                   cats$Opcoes_numero <- c(15, 5, 2, 1, 4, 3, 11, 8, 6,10, 8, 12, 13, 14, 9 )
@@ -128,12 +127,10 @@ evolucion_posi_by_subtype <- lapply(c("investment_grC", "negocios_grC", "cooptec
 
 names(evolucion_posi_by_subtype) <- c("investment_grC", "negocios_grC", "cooptec_grC", "colabInst_grC", "madre_grC")
 
-writexl::write_xlsx(evolucion_posi_by_subtype, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_diapositivas/evolucion_by_subtype.xlsx")
+writexl::write_xlsx(evolucion_posi_by_subtype, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_informe/rodada_2022/evolucion_by_subtype.xlsx")
 
 
 #### Evolution of top 15 organizations 
-
-
 
 evolucion_top_15 <- lapply(c("investment_grC", "negocios_grC", "cooptec_grC", "colabInst_grC", "madre_grC"),
                                     function(pattern){
@@ -176,9 +173,9 @@ evolucion_top_15 <- lapply(c("investment_grC", "negocios_grC", "cooptec_grC", "c
 
 names(evolucion_top_15) <- c("investment_grC", "negocios_grC", "cooptec_grC", "colabInst_grC", "madre_grC")
 
-writexl::write_xlsx(evolucion_top_15, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_diapositivas/evolucion_top_15.xlsx")
+writexl::write_xlsx(evolucion_top_15, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_informe/rodada_2022/evolucion_top_15.xlsx")
 
-##### Evolution of  relationships  Rb
+##### Evolution of  relationships  Rb (creo que ya no es necesaria)
 
 evolucion_Rb <- lapply(c("investment_standard_net_results",  "cooptec_standard_net_results", "colabInst_standard_net_results"),
                        function(pattern){
@@ -204,19 +201,19 @@ evolucion_Rb <- lapply(c("investment_standard_net_results",  "cooptec_standard_n
                            
                            
                            if(pattern == "investment_standard_net_results"){
-                             cats <- preguntas[["rodada_2021"]] %>% filter(Variavel == "R2b") %>% 
+                             cats <- preguntas[["rodada_2022"]] %>% filter(Variavel == "R2b") %>% 
                                pull(vars_opts) %>% 
                                purrr::pluck(1) %>% 
                                dplyr::select(`Labels in English`)
                              
                            }else if(pattern == "cooptec_standard_net_results"){
-                             cats <- preguntas[["rodada_2021"]] %>% filter(Variavel == "R3b") %>% 
+                             cats <- preguntas[["rodada_2022"]] %>% filter(Variavel == "R3d") %>% 
                                pull(vars_opts) %>% 
                                purrr::pluck(1) %>% 
                                dplyr::select(`Labels in English`)
                              
                            }else{
-                             cats <- preguntas[["rodada_2021"]] %>% filter(Variavel == "R4b") %>% 
+                             cats <- preguntas[["rodada_2022"]] %>% filter(Variavel == "R4b") %>% 
                                pull(vars_opts) %>% 
                                purrr::pluck(1) %>% 
                                dplyr::select(`Labels in English`)
@@ -242,9 +239,9 @@ evolucion_Rb <- lapply(c("investment_standard_net_results",  "cooptec_standard_n
 
 
 
-names(evolucion_Rb) <-c("investment_standard_net_results",  "cooptec_standard_net_results")
+names(evolucion_Rb) <-c("investment_standard_net_results",  "cooptec_standard_net_results", "colabInst_standard_net_results")
 
-writexl::write_xlsx(evolucion_Rb, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_diapositivas/evolucion_Rb.xlsx")
+writexl::write_xlsx(evolucion_Rb, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_informe/rodada_2022/evolucion_Rb.xlsx")
 
 ### Evolution of relationships intensity 
 
@@ -260,14 +257,14 @@ evolucion_Rc <- lapply(c("investment_standard_net_results",
                            cat(rodada, "\n")
                            R_sheet <- "Rc_summ"
                            if(pattern == "investment_standard_net_results"){
-                             cats <- preguntas[["rodada_2021"]] %>% filter(Variavel == "R2c") %>% 
+                             cats <- preguntas[["rodada_2022"]] %>% filter(Variavel == "R2c") %>% 
                                pull(vars_opts) %>% 
                                purrr::pluck(1) %>% 
                                dplyr::select(`Labels in English`)
                              
                            }else if(pattern == "negocios_standard_net_results"){
                              
-                             cats <- preguntas[["rodada_2021"]] %>% filter(Variavel == "R1b") %>% 
+                             cats <- preguntas[["rodada_2022"]] %>% filter(Variavel == "R1b") %>% 
                                pull(vars_opts) %>% 
                                purrr::pluck(1) %>% 
                                dplyr::select(`Labels in English`)
@@ -275,13 +272,13 @@ evolucion_Rc <- lapply(c("investment_standard_net_results",
                              R_sheet <- "Rb_summ"
                              
                            }else if(pattern == "cooptec_standard_net_results"){
-                             cats <- preguntas[["rodada_2021"]] %>% filter(Variavel == "R3c") %>% 
+                             cats <- preguntas[["rodada_2022"]] %>% filter(Variavel == "R3c") %>% 
                                pull(vars_opts) %>% 
                                purrr::pluck(1) %>% 
                                dplyr::select(`Labels in English`)
                              
                            }else if(pattern == "colabInst_standard_net_results"){
-                             cats <- preguntas[["rodada_2021"]] %>% filter(Variavel == "R4c") %>% 
+                             cats <- preguntas[["rodada_2022"]] %>% filter(Variavel == "R4c") %>% 
                                pull(vars_opts) %>% 
                                purrr::pluck(1) %>% 
                                dplyr::select(`Labels in English`)
@@ -327,7 +324,7 @@ names(evolucion_Rc) <- c("investment_standard_net_results",
                          "cooptec_standard_net_results",
                          "colabInst_standard_net_results")
 
-writexl::write_xlsx(evolucion_Rc, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_diapositivas/evolucion_Rc.xlsx")
+writexl::write_xlsx(evolucion_Rc, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_informe/rodada_2022/evolucion_Rc.xlsx")
 
 
 ### Advanced metrics: Data por thematic network 
@@ -340,7 +337,7 @@ advance_mtrs <- lapply(rodadas, function(rodada){
                           "colabInst_standard_net_results",
                           "madre_standard_net_results"),
                     b = c("investment_grC", 
-                          "negocios_grC", 
+                          "negocios_grC",
                           "cooptec_grC", 
                           "colabInst_grC", 
                           "madre_grC"),
@@ -412,7 +409,7 @@ advance_mtrs <- lapply(rodadas, function(rodada){
 
 
 
-writexl::write_xlsx(advance_mtrs, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_diapositivas/advance_mtrs_compar.xlsx")
+writexl::write_xlsx(advance_mtrs, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_informe/rodada_2022/advance_mtrs_compar.xlsx")
 
 
 
@@ -420,72 +417,73 @@ writexl::write_xlsx(advance_mtrs, "D:/OneDrive - CGIAR/Documents/PPA 2021/networ
 
 
 in_out_ppa <- lapply(rodadas,
-                       function(rodada){
-                         cat("processing: ", pattern, "\n")
-                         df <- lapply(c("investment_standard_net_results", 
-                                        "negocios_standard_net_results", 
-                                        "cooptec_standard_net_results",
-                                        "colabInst_standard_net_results"), function(pattern){
-                           
-                           baseDir <- paste0(root_dir, rodada)
-                           
-                           cat(rodada, "\n")
-                           
-                           to_ret <- list.files(baseDir, pattern = pattern, recursive = T, full.names = T) %>% 
-                             .[!grepl("old", .)] %>% 
-                             .[!grepl("~", .)] %>%
-                             .[grepl(".xlsx", .)] %>% 
-                             readxl::read_excel(., sheet = "Ra_summ") %>% 
-                             dplyr::mutate(Group = ifelse(Group == "0", "C", Group))
-                           
-                           names(to_ret) <- c("Group", "var",  "Count", "Frequency")
-                           
-                           to_ret <- to_ret %>% 
-                             dplyr::group_by(var) %>% 
-                             dplyr::summarise(sum = sum(Count))
-                           
-                           
-                           
-                           if(pattern == "investment_standard_net_results"){
-                             cats <- preguntas[["rodada_2021"]] %>% filter(Variavel == "R2a") %>% 
-                               pull(vars_opts) %>% 
-                               purrr::pluck(1) %>% 
-                               dplyr::select(`Labels in English`)
-                             
-                           }else if(pattern == "cooptec_standard_net_results"){
-                             cats <- preguntas[["rodada_2021"]] %>% filter(Variavel == "R3a") %>% 
-                               pull(vars_opts) %>% 
-                               purrr::pluck(1) %>% 
-                               dplyr::select(`Labels in English`)
-                             
-                           }else if(pattern == "negocios_standard_net_results"){ 
-                             cats <- preguntas[["rodada_2021"]] %>% filter(Variavel == "R2a") %>% 
-                               pull(vars_opts) %>% 
-                               purrr::pluck(1) %>% 
-                               dplyr::select(`Labels in English`)
-                           }else{
-                             cats <- preguntas[["rodada_2021"]] %>% filter(Variavel == "R4a") %>% 
-                               pull(vars_opts) %>% 
-                               purrr::pluck(1) %>% 
-                               dplyr::select(`Labels in English`)
-                           }
-                           
-                           names(cats) <- "label"
-                           
-                           to_ret <- left_join(cats, to_ret,  by = c("label" = "var")) 
-                           
-                           names(to_ret)[-1] <- paste0(names(to_ret)[-1], "_",pattern)
-                           
-                           return(to_ret)
-                         }) %>% 
-                           purrr::reduce(., left_join, by = "label") %>% 
-                           dplyr::mutate(across(everything(.), .fns = function(i){
-                             ifelse(is.na(i), 0, i)
-                           }))
-                         
-                         return(df)
-                         
-                       })
+                     function(rodada){
+                       df <- lapply(c("investment_standard_net_results", 
+                                      "negocios_standard_net_results", 
+                                      "cooptec_standard_net_results",
+                                      "colabInst_standard_net_results"), function(pattern){
+                                        cat("processing: ", pattern, "\n")
+                                        
+                                        
+                                        baseDir <- paste0(root_dir, rodada)
+                                        
+                                        cat(rodada, "\n")
+                                        
+                                        to_ret <- list.files(baseDir, pattern = pattern, recursive = T, full.names = T) %>% 
+                                          .[!grepl("old", .)] %>% 
+                                          .[!grepl("~", .)] %>%
+                                          .[grepl(".xlsx", .)] %>% 
+                                          readxl::read_excel(., sheet = "Ra_summ") %>% 
+                                          dplyr::mutate(Group = ifelse(Group == "0", "C", Group))
+                                        
+                                        names(to_ret) <- c("Group", "var",  "Count", "Frequency")
+                                        
+                                        to_ret <- to_ret %>% 
+                                          dplyr::group_by(var) %>% 
+                                          dplyr::summarise(sum = sum(Count))
+                                        
+                                        
+                                        
+                                        if(pattern == "investment_standard_net_results"){
+                                          cats <- preguntas[["rodada_2022"]] %>% filter(Variavel == "R2a") %>% 
+                                            pull(vars_opts) %>% 
+                                            purrr::pluck(1) %>% 
+                                            dplyr::select(`Labels in English`)
+                                          
+                                        }else if(pattern == "cooptec_standard_net_results"){
+                                          cats <- preguntas[["rodada_2022"]] %>% filter(Variavel == "R3a") %>% 
+                                            pull(vars_opts) %>% 
+                                            purrr::pluck(1) %>% 
+                                            dplyr::select(`Labels in English`)
+                                          
+                                        }else if(pattern == "negocios_standard_net_results"){ 
+                                          cats <- preguntas[["rodada_2022"]] %>% filter(Variavel == "R2a") %>% 
+                                            pull(vars_opts) %>% 
+                                            purrr::pluck(1) %>% 
+                                            dplyr::select(`Labels in English`)
+                                        }else{
+                                          cats <- preguntas[["rodada_2022"]] %>% filter(Variavel == "R4a") %>% 
+                                            pull(vars_opts) %>% 
+                                            purrr::pluck(1) %>% 
+                                            dplyr::select(`Labels in English`)
+                                        }
+                                        
+                                        names(cats) <- "label"
+                                        
+                                        to_ret <- left_join(cats, to_ret,  by = c("label" = "var")) 
+                                        
+                                        names(to_ret)[-1] <- paste0(names(to_ret)[-1], "_",pattern)
+                                        
+                                        return(to_ret)
+                                      }) %>% 
+                         purrr::reduce(., left_join, by = "label") %>% 
+                         dplyr::mutate(across(everything(.), .fns = function(i){
+                           ifelse(is.na(i), 0, i)
+                         }))
+                       
+                       return(df)
+                       
+                     })
 
 
 names(in_out_ppa) <- rodadas
@@ -502,8 +500,8 @@ in_out_ppa$totals <- in_out_ppa %>%
   }) %>% 
   purrr::reduce(., left_join, by = "label")
   
-
-writexl::write_xlsx(in_out_ppa, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_diapositivas/in_out_ppa.xlsx")
+names(in_out_ppa$totals) <- c("Label", rodadas)
+writexl::write_xlsx(in_out_ppa, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_informe/rodada_2022/in_out_ppa.xlsx")
 
 ##### red mama number of relationships (degree)
 
@@ -520,12 +518,9 @@ df <- lapply(rodadas, function(rodada){
     .[grepl(".xlsx", .)] %>% 
     readxl::read_excel(., sheet = "node_mtrs") %>% 
     dplyr::mutate(V1 = ifelse(V1 == "0", "C", V1)) %>% 
-    dplyr::select(nodes_id, Nome, V1, degree)
+    dplyr::select(nodes_id, Nome,  V1, degree) 
   
-  
-  
- 
-  names(to_ret) <- c("Node", paste0("Nome_", rodada), "V1", paste0("Deg_",  rodada))
+  names(to_ret) <- c("Node", paste0("Nome_", rodada), paste0("V1_", rodada), paste0("Deg_",  rodada))
   
   return(to_ret)
   
@@ -534,22 +529,22 @@ df <- lapply(rodadas, function(rodada){
 ranks_red_mama <- list()
 
  ranks <- purrr::reduce(df, right_join, by = c("Node")) %>% 
-  dplyr::select(Node, starts_with("Nome"), V1,  starts_with("Deg")) %>% 
-  tidyr::drop_na(Nome_rodada_2019,   Nome_rodada_2020,  Nome_rodada_2021) %>% 
-  dplyr::mutate(Evol_Degree   = Deg_rodada_2021-Deg_rodada_2020,
-                Evol_Degree_perc =  Evol_Degree/Deg_rodada_2020) 
+  dplyr::select(Node, starts_with("Nome"), V1 = V1_rodada_2022,  starts_with("Deg")) %>% 
+  tidyr::drop_na(Nome_rodada_2019,   Nome_rodada_2020,  Nome_rodada_2021, Nome_rodada_2022) %>% 
+  dplyr::mutate(Evol_Degree   = Deg_rodada_2022-Deg_rodada_2021,
+                Evol_Degree_perc =  Evol_Degree/Deg_rodada_2021) 
 
  ranks_red_mama$rank_ascendente <-ranks %>% 
   dplyr::filter(V1 != "C") %>% 
   dplyr::arrange(desc(Evol_Degree)) %>% 
   dplyr::mutate(rank = 1:nrow(.)) %>% 
-  dplyr::select(rank, Node,  Nome = Nome_rodada_2021, starts_with("Deg"), Evol_Degree, Evol_Degree_perc)
+  dplyr::select(rank, Node,  Nome = Nome_rodada_2022, starts_with("Deg"), Evol_Degree, Evol_Degree_perc)
  
  ranks_red_mama$rank_ascendente_grC <- ranks %>% 
   dplyr::filter(V1 == "C") %>% 
   dplyr::arrange(desc(Evol_Degree)) %>% 
   dplyr::mutate(rank = 1:nrow(.)) %>% 
-  dplyr::select(rank, Node, Nome = Nome_rodada_2021, starts_with("Deg"), Evol_Degree, Evol_Degree_perc)
+  dplyr::select(rank, Node, Nome = Nome_rodada_2022, starts_with("Deg"), Evol_Degree, Evol_Degree_perc)
 
 
 
@@ -557,13 +552,13 @@ ranks_red_mama <- list()
   dplyr::filter(V1 != "C") %>% 
   dplyr::arrange((Evol_Degree)) %>% 
   dplyr::mutate(rank = 1:nrow(.)) %>% 
-  dplyr::select(rank, Node, Nome = Nome_rodada_2021, starts_with("Deg"), Evol_Degree, Evol_Degree_perc)
+  dplyr::select(rank, Node, Nome = Nome_rodada_2022, starts_with("Deg"), Evol_Degree, Evol_Degree_perc)
 
  ranks_red_mama$rank_descendente_grC <-ranks %>% 
   dplyr::filter(V1 == "C") %>% 
   dplyr::arrange((Evol_Degree)) %>% 
   dplyr::mutate(rank = 1:nrow(.)) %>% 
-  dplyr::select(rank, Node, Nome = Nome_rodada_2021, starts_with("Deg"), Evol_Degree, Evol_Degree_perc)
+  dplyr::select(rank, Node, Nome = Nome_rodada_2022, starts_with("Deg"), Evol_Degree, Evol_Degree_perc)
 
- writexl::write_xlsx(ranks_red_mama, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_diapositivas/ranks_red_mama.xlsx")
+ writexl::write_xlsx(ranks_red_mama, "D:/OneDrive - CGIAR/Documents/PPA 2021/network_results/resultados_informe/rodada_2022/ranks_red_mama.xlsx")
  

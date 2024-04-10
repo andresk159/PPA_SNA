@@ -44,8 +44,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[["rodada_2022"]], 
                    out_file = paste0(out_dirs[[name_rodada]], "/madre_standard_net_graph_orgtype.png"))
 
 
@@ -93,7 +93,8 @@ node_mtrs <- tibble(nodes_id = V(net_no_dir)$name) %>%
   dplyr::left_join(., entrevistados[[name_rodada]] %>% dplyr::select(ID_node, `Labels in English`), by = c("nodes_id"= "ID_node")) %>% 
   dplyr::left_join(., type_org[[name_rodada]] %>% dplyr::select(ID_node, `Type of organization`, `Subtype of organization` ), by = c("nodes_id"= "ID_node")) %>%
   dplyr::left_join(., role_ppa_rm, by = c("nodes_id" = "ID_node")) %>% 
-  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )
+  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )%>% 
+  dplyr::filter(!duplicated(nodes_id))
 
 
 to_save <- list(
@@ -133,8 +134,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[["rodada_2022"]], 
                    out_file = paste0(out_dirs[[name_rodada]], "/madre_grC_net_graph_orgtype.png"))
 
 
@@ -179,7 +180,8 @@ node_mtrs <- tibble(nodes_id = V(net_no_dir)$name) %>%
   dplyr::left_join(., entrevistados[[name_rodada]] %>% dplyr::select(ID_node, `Labels in English`), by = c("nodes_id"= "ID_node")) %>% 
   dplyr::left_join(., type_org[[name_rodada]] %>% dplyr::select(ID_node, `Type of organization`, `Subtype of organization` ), by = c("nodes_id"= "ID_node")) %>%
   dplyr::left_join(., role_ppa_rm, by = c("nodes_id" = "ID_node")) %>% 
-  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )
+  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )%>% 
+  dplyr::filter(!duplicated(nodes_id))
 
 
 to_save <- list(
@@ -238,8 +240,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[['rodada_2022']], 
                    out_file = paste0(out_dirs[[name_rodada]], "/madre_standard_net_graph_orgtype.png"))
 
 
@@ -285,7 +287,8 @@ node_mtrs <- tibble(nodes_id = V(net_no_dir)$name) %>%
   dplyr::left_join(., entrevistados[[name_rodada]] %>% dplyr::select(ID_node, `Labels in English`), by = c("nodes_id"= "ID_node")) %>% 
   dplyr::left_join(., type_org[[name_rodada]] %>% dplyr::select(ID_node, `Type of organization`, `Subtype of organization` ), by = c("nodes_id"= "ID_node")) %>%
   dplyr::left_join(., role_ppa_rm, by = c("nodes_id" = "ID_node")) %>% 
-  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )
+  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )%>% 
+  dplyr::filter(!duplicated(nodes_id))
 
 
 to_save <- list(
@@ -321,8 +324,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[["rodada_2022"]], 
                    out_file = paste0(out_dirs[[name_rodada]], "/madre_grC_net_graph_orgtype.png"))
 
 
@@ -366,7 +369,8 @@ node_mtrs <- tibble(nodes_id = V(net_no_dir)$name) %>%
   dplyr::left_join(., entrevistados[[name_rodada]] %>% dplyr::select(ID_node, `Labels in English`), by = c("nodes_id"= "ID_node")) %>% 
   dplyr::left_join(., type_org[[name_rodada]] %>% dplyr::select(ID_node, `Type of organization`, `Subtype of organization` ), by = c("nodes_id"= "ID_node")) %>%
   dplyr::left_join(., role_ppa_rm, by = c("nodes_id" = "ID_node")) %>% 
-  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )
+  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )%>% 
+  dplyr::filter(!duplicated(nodes_id))
 
 
 to_save <- list(
@@ -450,8 +454,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[["rodada_2022"]], 
                    out_file = paste0(out_dirs[[name_rodada]], "/madre_standard_net_graph_orgtype.png"))
 
 
@@ -495,7 +499,8 @@ node_mtrs <- tibble(nodes_id = V(net_no_dir)$name) %>%
   dplyr::left_join(., entrevistados[[name_rodada]] %>% dplyr::select(ID_node, `Labels in English`), by = c("nodes_id"= "ID_node")) %>% 
   dplyr::left_join(., type_org[[name_rodada]] %>% dplyr::select(ID_node, `Type of organization`, `Subtype of organization` ), by = c("nodes_id"= "ID_node")) %>%
   dplyr::left_join(., role_ppa_rm, by = c("nodes_id" = "ID_node")) %>% 
-  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )
+  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )%>% 
+  dplyr::filter(!duplicated(nodes_id))
 
 
 to_save <- list(
@@ -532,8 +537,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[['rodada_2022']], 
                    out_file = paste0(out_dirs[[name_rodada]], "/madre_grC_net_graph_orgtype.png"))
 
 
@@ -578,7 +583,8 @@ node_mtrs <- tibble(nodes_id = V(net_no_dir)$name) %>%
   dplyr::left_join(., entrevistados[[name_rodada]] %>% dplyr::select(ID_node, `Labels in English`), by = c("nodes_id"= "ID_node")) %>% 
   dplyr::left_join(., type_org[[name_rodada]] %>% dplyr::select(ID_node, `Type of organization`, `Subtype of organization` ), by = c("nodes_id"= "ID_node")) %>%
   dplyr::left_join(., role_ppa_rm, by = c("nodes_id" = "ID_node")) %>% 
-  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )
+  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )%>% 
+  dplyr::filter(!duplicated(nodes_id))
 
 
 to_save <- list(
@@ -634,8 +640,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[["rodada_2022"]], 
                    out_file = paste0(out_dirs[[name_rodada]], "/madre_standard_net_graph_orgtype.png"))
 
 
@@ -679,7 +685,8 @@ node_mtrs <- tibble(nodes_id = V(net_no_dir)$name) %>%
   dplyr::left_join(., entrevistados[[name_rodada]] %>% dplyr::select(ID_node, `Labels in English`), by = c("nodes_id"= "ID_node")) %>% 
   dplyr::left_join(., type_org[[name_rodada]] %>% dplyr::select(ID_node, `Type of organization`, `Subtype of organization` ), by = c("nodes_id"= "ID_node")) %>%
   dplyr::left_join(., role_ppa_rm, by = c("nodes_id" = "ID_node")) %>% 
-  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )
+  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )%>% 
+  dplyr::filter(!duplicated(nodes_id))
 
 
 to_save <- list(
@@ -716,8 +723,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[["rodada_2022"]], 
                    out_file = paste0(out_dirs[[name_rodada]], "/madre_grC_net_graph_orgtype.png"))
 
 
@@ -762,7 +769,8 @@ node_mtrs <- tibble(nodes_id = V(net_no_dir)$name) %>%
   dplyr::left_join(., entrevistados[[name_rodada]] %>% dplyr::select(ID_node, `Labels in English`), by = c("nodes_id"= "ID_node")) %>% 
   dplyr::left_join(., type_org[[name_rodada]] %>% dplyr::select(ID_node, `Type of organization`, `Subtype of organization` ), by = c("nodes_id"= "ID_node")) %>%
   dplyr::left_join(., role_ppa_rm, by = c("nodes_id" = "ID_node")) %>% 
-  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )
+  dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )%>% 
+  dplyr::filter(!duplicated(nodes_id))
 
 
 to_save <- list(

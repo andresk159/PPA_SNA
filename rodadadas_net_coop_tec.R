@@ -129,8 +129,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[["rodada_2022"]], 
                    out_file = paste0(out_dirs[[name_rodada]], "/cooptec_standard_net_graph_orgtype.png"))
 
 
@@ -255,8 +255,8 @@ for(i in 1:length(net_felipe_ego_dir_mtrs)){
 
 net_dir_orgtype <- net_graphs_dir_orgtype(edge_list = d2, 
                                           groups = groups[[name_rodada]],
-                                          type_org = type_org[[name_rodada]],
-                                          preguntas = preguntas[[name_rodada]], 
+                                          type_org = type_org_v2[[name_rodada]],
+                                          preguntas = preguntas[["rodada_2022"]], 
                                           out_file = paste0(out_dirs[[name_rodada]], "/cooptec_Dir_net_orgtype.png"))
 
 
@@ -381,8 +381,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[["rodada_2022"]], 
                    out_file = paste0(out_dirs[[name_rodada]], "/cooptec_standard_net_graph_orgtype.png"))
 
 ###metricas
@@ -499,8 +499,8 @@ for(i in 1:length(net_felipe_ego_dir_mtrs)){
 
 net_dir_orgtype <- net_graphs_dir_orgtype(edge_list = d2, 
                                           groups = groups[[name_rodada]],
-                                          type_org = type_org[[name_rodada]],
-                                          preguntas = preguntas[[name_rodada]], 
+                                          type_org = type_org_v2[[name_rodada]],
+                                          preguntas = preguntas[["rodada_2022"]], 
                                           out_file = paste0(out_dirs[[name_rodada]], "/cooptec_Dir_net_orgtype.png"))
 
 
@@ -543,7 +543,8 @@ saveRDS(net,  paste0(out_dirs[["rodada_2019"]],"/cooptec_edge_list_JF.rds"))
 #######     rodada 2021      ##########
 #######################################
 
-inv_2021 <- raw_list_2021[[grep("_coop", names(raw_list_2021))]]
+inv_2021 <- raw_list_2021[[grep("_coop", names(raw_list_2021))]] %>% 
+  dplyr::select(everything(.), R3b = R3d) 
 outras_org_2021 <- raw_list_2021[[grep("outras_org", names(raw_list_2021))]]
 
 name_rodada <- "rodada_2021"
@@ -644,8 +645,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[["rodada_2022"]], 
                    out_file = paste0(out_dirs[[name_rodada]], "/cooptec_standard_net_graph_orgtype.png"))
 
 
@@ -700,29 +701,29 @@ nt1 <- inv_2021 %>%
 
 
 d2 <- nt1 %>% 
-  dplyr::select( R_Start_ID,  R_Destiny_ID, R3c, R3a, R3d, R_b3) %>%
-  dplyr::filter(R3d != 9) %>% 
+  dplyr::select( R_Start_ID,  R_Destiny_ID, R3c, R3a, R3b, R_b3) %>%
+  dplyr::filter(R3b != 9) %>% 
   dplyr::mutate_all(as.character) %>%
   dplyr::mutate(start = case_when(
-    R3d == "2" ~ R_Destiny_ID,
+    R3b == "2" ~ R_Destiny_ID,
     TRUE ~ R_Start_ID 
   ),
   end = case_when(
-    R3d == "2" ~ R_Start_ID ,
+    R3b == "2" ~ R_Start_ID ,
     TRUE ~ R_Destiny_ID 
   )) 
 
 # duplicar e invertir las relacions recibio/aporto
 dopler <- d2 %>% 
-  dplyr::filter(R3d == "3") %>%
+  dplyr::filter(R3b == "3") %>%
   dplyr::mutate(start =  R_Destiny_ID, 
                 end = R_Start_ID) %>% 
-  dplyr::select(start, end, R3c, R3a, R3d, R_b3)
+  dplyr::select(start, end, R3c, R3a, R3b, R_b3)
 # adicionar filas duplicadas al edgelist
 d2 <- d2 %>% 
   bind_rows(., dopler) %>%
-  dplyr::select(R_Start_ID = start, R_Destiny_ID = end, R3c, R3a, R3d, R_b3) %>% 
-  dplyr::filter(R3d %in% c("1", "2" , "3")) 
+  dplyr::select(R_Start_ID = start, R_Destiny_ID = end, R3c, R3a, R3b, R_b3) %>% 
+  dplyr::filter(R3b %in% c("1", "2" , "3")) 
 
 
 
@@ -760,8 +761,8 @@ for(i in 1:length(net_felipe_ego_dir_mtrs)){
 
 net_dir_orgtype <- net_graphs_dir_orgtype(edge_list = d2, 
                                           groups = groups[[name_rodada]],
-                                          type_org = type_org[[name_rodada]],
-                                          preguntas = preguntas[[name_rodada]], 
+                                          type_org = type_org_v2[[name_rodada]],
+                                          preguntas = preguntas[["rodada_2022"]], 
                                           out_file = paste0(out_dirs[[name_rodada]], "/cooptec_Dir_net_orgtype.png"))
 
 
@@ -775,7 +776,8 @@ writexl::write_xlsx(to_save, path = paste0(out_dirs[[name_rodada]],"/cooptec_Dir
 #######     rodada 2022      ##########
 #######################################
 
-inv_2022 <- raw_list_2022[[grep("_coop", names(raw_list_2022))]]
+inv_2022 <- raw_list_2022[[grep("_coop", names(raw_list_2022))]] %>% 
+  dplyr::select(everything(.), R3b = R3d) 
 outras_org_2022 <- raw_list_2022[[grep("outras_org", names(raw_list_2022))]]
 
 name_rodada <- "rodada_2022"
@@ -794,7 +796,7 @@ nt1 <- inv_2022 %>%
 
 
 d <- nt1 %>%
-  dplyr::select( R_Start_ID,  R_Destiny_ID, R3a, R_b3, R_Start_ID_ego) %>%
+  dplyr::select( R_Start_ID,  R_Destiny_ID, R3a, R3b, R_Start_ID_ego) %>%
   dplyr::mutate_all(as.character)
 
 
@@ -826,7 +828,7 @@ net_felipe_ego_mtrs_grC <- net_metrics(edge_list_raw = nt_all,
                                        preguntas = preguntas[[name_rodada]],
                                        role_ppa = role_ppa[[name_rodada]],
                                        Ra = "R3a",
-                                       Rb = "R_b3",
+                                       Rb = "R3b",
                                        Rc = "R3c")
 
 net_felipe_ego_mtrs_grC$nodes_to_add <- tibble(ID_node = unique(c(nt2$R_Start_ID, nt2$R_Destiny_ID))) %>%
@@ -876,8 +878,8 @@ net_felipe_ego <-net_graphs(edge_list = d2,
 
 net_graphs_orgtype(edge_list = d2, 
                    groups = groups[[name_rodada]], 
-                   type_org = type_org[[name_rodada]], 
-                   preguntas = preguntas[[name_rodada]], 
+                   type_org = type_org_v2[[name_rodada]], 
+                   preguntas = preguntas[["rodada_2022"]], 
                    out_file = paste0(out_dirs[[name_rodada]], "/cooptec_standard_net_graph_orgtype.png"))
 
 
@@ -892,7 +894,7 @@ net_felipe_ego_mtrs <- net_metrics(edge_list_raw = nt1,
                                    preguntas = preguntas[[name_rodada]], 
                                    role_ppa = role_ppa[[name_rodada]],
                                    Ra = "R3a", 
-                                   Rb = "R_b3",
+                                   Rb = "R3b",
                                    Rc = "R3c")
 
 
@@ -932,29 +934,29 @@ nt1 <- inv_2022 %>%
 
 
 d2 <- nt1 %>% 
-  dplyr::select( R_Start_ID,  R_Destiny_ID, R3c, R3a, R3d) %>%
-  dplyr::filter(R3d != 9) %>% 
+  dplyr::select( R_Start_ID,  R_Destiny_ID, R3c, R3a, R3b) %>%
+  dplyr::filter(R3b != 9) %>% 
   dplyr::mutate_all(as.character) %>%
   dplyr::mutate(start = case_when(
-    R3d == "2" ~ R_Destiny_ID,
+    R3b == "2" ~ R_Destiny_ID,
     TRUE ~ R_Start_ID 
   ),
   end = case_when(
-    R3d == "2" ~ R_Start_ID ,
+    R3b == "2" ~ R_Start_ID ,
     TRUE ~ R_Destiny_ID 
   )) 
 
 # duplicar e invertir las relacions recibio/aporto
 dopler <- d2 %>% 
-  dplyr::filter(R3d == "3") %>%
+  dplyr::filter(R3b == "3") %>%
   dplyr::mutate(start =  R_Destiny_ID, 
                 end = R_Start_ID) %>% 
-  dplyr::select(start, end, R3c, R3a, R3d)
+  dplyr::select(start, end, R3c, R3a, R3b)
 # adicionar filas duplicadas al edgelist
 d2 <- d2 %>% 
   bind_rows(., dopler) %>%
-  dplyr::select(R_Start_ID = start, R_Destiny_ID = end, R3c, R3a, R3d) %>% 
-  dplyr::filter(R3d %in% c("1", "2" , "3")) 
+  dplyr::select(R_Start_ID = start, R_Destiny_ID = end, R3c, R3a, R3b) %>% 
+  dplyr::filter(R3b %in% c("1", "2" , "3")) 
 
 
 
@@ -976,7 +978,7 @@ net_felipe_ego_dir_mtrs <- net_metrics_dir(edge_list_raw = nt1,
                                            preguntas = preguntas[[name_rodada]], 
                                            role_ppa = role_ppa[[name_rodada]],
                                            Ra = "R3a", 
-                                           Rb = "R3d")
+                                           Rb = "R3b")
 
 
 net_felipe_ego_dir_mtrs <- net_felipe_ego_dir_mtrs[!sapply(net_felipe_ego_dir_mtrs, is.null)]
@@ -992,8 +994,8 @@ for(i in 1:length(net_felipe_ego_dir_mtrs)){
 
 net_dir_orgtype <- net_graphs_dir_orgtype(edge_list = d2, 
                                           groups = groups[[name_rodada]],
-                                          type_org = type_org[[name_rodada]],
-                                          preguntas = preguntas[[name_rodada]], 
+                                          type_org = type_org_v2[[name_rodada]],
+                                          preguntas = preguntas[["rodada_2022"]], 
                                           out_file = paste0(out_dirs[[name_rodada]], "/cooptec_Dir_net_orgtype.png"))
 
 

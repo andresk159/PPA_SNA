@@ -94,7 +94,8 @@ net_graphs         <- function(edge_list, groups, gr_colors, preguntas, out_file
                                  dplyr::select(ID_node, V1) ,
                                directed= T) %>%
     igraph::delete_vertices(., igraph::degree(.) == 0) %>% 
-    igraph::delete_edges(., edges = which(igraph::which_multiple(.)))
+    igraph::delete_edges(., edges = which(igraph::which_multiple(.))) %>% 
+    igraph::delete_edges(., edges = which(igraph::which_loop(.)))
   
   saveRDS(net, gsub(".png", ".rds", out_file))
   
@@ -104,7 +105,8 @@ net_graphs         <- function(edge_list, groups, gr_colors, preguntas, out_file
                                         dplyr::select(ID_node, V1) ,
                                       directed=F) %>%
     igraph::delete_vertices(., igraph::degree(.) == 0) %>% 
-    igraph::delete_edges(., edges = which(igraph::which_multiple(.)))
+    igraph::delete_edges(., edges = which(igraph::which_multiple(.)))%>% 
+    igraph::delete_edges(., edges = which(igraph::which_loop(.)))
   
   #save adjacencyu matrix
    adj_mtx <- as_adjacency_matrix(net_no_dir, type = "both", sparse = F) %>% 
@@ -163,21 +165,43 @@ net_graphs_orgtype <- function(edge_list, groups, type_org, preguntas, out_file)
     
   }
   
-  type_org <- type_org %>% 
-    dplyr::select(ID_node, type = `Type of organization`) %>% 
-    dplyr::mutate(type = case_when(
-      type == "Company (consolidated or start-up)" ~ type, #azul
-      type == "Civil society organization" ~ type,  #rojitp 
-      TRUE ~ "Others"
-      
-    ))
+  # carlos y Jf quieren poner mas categorias y mas colores segun
+  # la nueva variable V39d
   
+  type_org_x <- type_org %>% 
+    dplyr::select(ID_node, type = `Type of organization`)
+  
+  
+  
+  gr_colors <- tibble(type  = c(get_questions_opts(preguntas, "V39d", "type", lan = "en")$type, "USAID"),
+                      color =  c("#0ba7ea", "#2aa908", "#1de0c6", "#748112", "#e29227", "#ddc88f", "lightgray", "#f50400") )
+  
+  
+  # type_org_x <- type_org_x %>% 
+  #   dplyr::select(ID_node, type = `Type of organization`) %>% 
+  #   dplyr::mutate(type = case_when(
+  #     type == "Company (consolidated or start-up)" ~ type, #azul
+  #     type == "Civil society organization" ~ type,  #rojitp 
+  #     TRUE ~ "Others"
+  #     
+  #   ))
+  # 
+  # gr_colors <- tibble(type  = c(unique(type_org_x$type), "USAID"),
+  #                     color = case_when(
+  #                       type == "Company (consolidated or start-up)" ~ "#5353c6", #azul
+  #                       type == "Civil society organization" ~ "#669900", #verde oliva
+  #                       type == "USAID" ~ "#ff0000", #rojitp 
+  #                       TRUE ~ "#999999"
+  #                         
+  #                     ) )
+  # 
   net <- graph_from_data_frame(d=  edge_list,
                                vertices = groups %>% 
                                  dplyr::select(ID_node, V1) ,
                                directed= T) %>%
     igraph::delete_vertices(., igraph::degree(.) == 0) %>% 
-    igraph::delete_edges(., edges = which(igraph::which_multiple(.)))
+    igraph::delete_edges(., edges = which(igraph::which_multiple(.)))%>% 
+    igraph::delete_edges(., edges = which(igraph::which_loop(.)))
   
   #saveRDS(net, gsub(".png", ".rds", out_file))
   
@@ -187,31 +211,18 @@ net_graphs_orgtype <- function(edge_list, groups, type_org, preguntas, out_file)
                                         dplyr::select(ID_node, V1) ,
                                       directed=F) %>%
     igraph::delete_vertices(., igraph::degree(.) == 0) %>% 
-    igraph::delete_edges(., edges = which(igraph::which_multiple(.)))
+    igraph::delete_edges(., edges = which(igraph::which_multiple(.)))%>% 
+    igraph::delete_edges(., edges = which(igraph::which_loop(.)))
   
   #save adjacencyu matrix
  
   orgs_types <- get_questions_opts(preguntas, var = "V39b", var_lab = "type")
   
-  gr_colors <- tibble(type  = c(unique(type_org$type), "USAID"),
-                      color = case_when(
-                                        type == "Company (consolidated or start-up)" ~ "#5353c6", #azul
-                                        type == "Civil society organization" ~ "#669900", #verde oliva
-                                        type == "USAID" ~ "#ff0000", #rojitp 
-                                        TRUE ~ "#999999"
-                                        
-                      ) )#pals::stepped(n = length(unique(type_org$type))))#c(Redmonder::redmonder.pal(8, "qMSOGn"), brewer.pal(0, "Blues") ))
-  
-  # color  = colorspace::diverging_hcl(length(unique(orgs_types$type)), 
-  #                                    palette = "Cork") %>% rev
-  
-  
-  #plot(1:4, 1:4, pch = 16, cex = 8, col = colorspace::sequential_hcl(4, palette = "Grays") )
   
   v_color <- tibble(id = V(net_no_dir)$name) %>% 
-    dplyr::left_join(., type_org, by = c("id" = "ID_node")) %>%
+    dplyr::left_join(., type_org_x, by = c("id" = "ID_node")) %>%
     dplyr::mutate(type = ifelse(id == "76", "USAID", type),
-                  type = ifelse(is.na(type), "Others", type)) %>% 
+                  type = ifelse(is.na(type), "Other", type)) %>% 
     dplyr::left_join(., groups, by = c("id" = "ID_node") ) %>% 
     dplyr::left_join(., gr_colors, by = c("type" = "type")) %>% 
     dplyr::left_join(., get_questions_opts(data = preguntas, var = "V1_xxxx", var_lab = "Groups"), 
@@ -326,7 +337,8 @@ net_metrics <- function(edge_list_raw, net, net_no_dir, entrevistados, type_org,
     dplyr::left_join(., entrevistados %>% dplyr::select(ID_node, `Labels in English`), by = c("nodes_id"= "ID_node")) %>% 
     dplyr::left_join(., type_org %>% dplyr::select(ID_node, `Type of organization`, `Subtype of organization` ), by = c("nodes_id"= "ID_node")) %>% 
     dplyr::left_join(., role_ppa, by = c("nodes_id" = "ID_node")) %>% 
-    dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )
+    dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) ) %>% 
+    dplyr::filter(!duplicated(nodes_id))
   
   if(Rc %in% names(edge_list_raw)){
     summ <-  tibble(var1 = unlist(attrs[Ra]), 
@@ -506,7 +518,8 @@ net_graphs_dir <- function(edge_list, groups, gr_colors, preguntas, out_file){
                                  dplyr::select(ID_node, V1) ,
                                directed= T) %>%
     igraph::delete_vertices(., igraph::degree(.) == 0) %>% 
-    igraph::delete_edges(., edges = which(igraph::which_multiple(.)))
+    igraph::delete_edges(., edges = which(igraph::which_multiple(.)))%>% 
+    igraph::delete_edges(., edges = which(igraph::which_loop(.)))
   
   #save adjacencyu matrix
   adj_mtx <- as_adjacency_matrix(net, type = "both", sparse = F) %>% 
@@ -578,21 +591,15 @@ net_graphs_dir_orgtype <- function(edge_list, groups, type_org, preguntas, out_f
     
   }
   
-  type_org <- type_org %>% 
-    dplyr::select(ID_node, type = `Type of organization`) %>% 
-    dplyr::mutate(type = case_when(
-      type == "Company (consolidated or start-up)" ~ type, #azul
-      type == "Civil society organization" ~ type,  #rojitp 
-      TRUE ~ "Others"
-      
-    ))
+ 
   
   net <- graph_from_data_frame(d=  edge_list,
                                vertices = groups %>% 
                                  dplyr::select(ID_node, V1) ,
                                directed= T) %>%
     igraph::delete_vertices(., igraph::degree(.) == 0) %>% 
-    igraph::delete_edges(., edges = which(igraph::which_multiple(.)))
+    igraph::delete_edges(., edges = which(igraph::which_multiple(.)))%>% 
+    igraph::delete_edges(., edges = which(igraph::which_loop(.)))
   
   #save adjacencyu matrix
   adj_mtx <- as_adjacency_matrix(net, type = "both", sparse = F) %>% 
@@ -619,20 +626,37 @@ net_graphs_dir_orgtype <- function(edge_list, groups, type_org, preguntas, out_f
   #     shp == "Intermediary" ~ "circle",
   #     shp == "Recipient" ~ "triangle",
   #     shp == "Investor" ~ "square"))
-  # 
-  orgs_types <- get_questions_opts(preguntas, var = "V39b", var_lab = "type")
   
-  gr_colors <- tibble(type  = c(unique(type_org$type), "USAID"),
-                      color = case_when(
-                        type == "Company (consolidated or start-up)" ~ "#5353c6", #azul
-                        type == "Civil society organization" ~ "#669900", #verde oliva
-                        type == "USAID" ~ "#ff0000", #rojitp 
-                        TRUE ~ "#999999"
-                        
-                      ) )
+  type_org_x <- type_org %>% 
+    dplyr::select(ID_node, type = `Type of organization`)
+  
+  
+  gr_colors <- tibble(type  = c(get_questions_opts(preguntas, "V39d", "type", lan = "en")$type, "USAID"),
+                      color = c("#0ba7ea", "#2aa908", "#1de0c6", "#748112", "#e29227", "#ddc88f", "lightgray", "#f50400") )
+
+  
+  # type_org <- type_org %>% 
+  #   dplyr::select(ID_node, type = `Type of organization`) %>% 
+  #   dplyr::mutate(type = case_when(
+  #     type == "Company (consolidated or start-up)" ~ type, #azul
+  #     type == "Civil society organization" ~ type,  #rojitp 
+  #     TRUE ~ "Others"
+  #     
+  #   ))
+  # # 
+  # orgs_types <- get_questions_opts(preguntas, var = "V39b", var_lab = "type")
+  # 
+  # gr_colors <- tibble(type  = c(unique(type_org$type), "USAID"),
+  #                     color = case_when(
+  #                       type == "Company (consolidated or start-up)" ~ "#5353c6", #azul
+  #                       type == "Civil society organization" ~ "#669900", #verde oliva
+  #                       type == "USAID" ~ "#ff0000", #rojitp 
+  #                       TRUE ~ "#999999"
+  #                       
+  #                     ) )
   
   v_color <- tibble(id = V(net)$name) %>% 
-    dplyr::left_join(., type_org, by = c("id" = "ID_node")) %>%
+    dplyr::left_join(., type_org_x, by = c("id" = "ID_node")) %>%
     dplyr::mutate(type = ifelse(id == "76", "USAID", type )) %>% 
     dplyr::left_join(., groups %>% dplyr::select(ID_node, V1 ), by = c("id" = "ID_node") ) %>% 
     dplyr::left_join(., vtx_shp %>% dplyr::select(id, shp), by = c("id" = "id")) %>%
@@ -752,7 +776,8 @@ net_metrics_dir <- function(edge_list_raw, net, vtx_shp, entrevistados, type_org
     dplyr::left_join(., entrevistados %>% dplyr::select(ID_node, `Labels in English`), by = c("nodes_id"= "ID_node")) %>% 
     dplyr::left_join(., type_org %>% dplyr::select(ID_node, `Type of organization`, `Subtype of organization` ), by = c("nodes_id"= "ID_node")) %>% 
     dplyr::left_join(., role_ppa, by = c("nodes_id" = "ID_node")) %>% 
-    dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) )
+    dplyr::mutate(across(where(is.character), function(i){replace_na(i, "Not participated")}) ) %>% 
+    dplyr::filter(!duplicated(nodes_id))
   
   summ <-  tibble(var1 = unlist(attrs[Ra]), 
                   var2 = unlist(attrs[Rb])) %>%
@@ -1123,6 +1148,65 @@ type_org[["rodada_2021"]] <- type_org[["rodada_2021"]] %>%
 
 
 
+
+type_org_v2 <-  list(
+  #Nueva suegerencia de V39a - V39d ---> Usar la variable V39d en lugar de la V39d 
+  # raw_list_2020[[grep("Empresas_orgs_atributos", names(raw_list_2020))]] 
+  # dado unas pequeñas inconsistensias en los tipos y subtipos de las empresas
+  # se debe fijar las variables preguntas y Empresas_org_Atributos por las de la rodada_2022
+  # y se debe usar V39c en lugar de V39b
+  #sin embargo se seguira usando la etiqueta V39b para evitar problemas
+  #con los scripts
+  
+  rodada_2019 = raw_list_2022[[grep("Empresas_orgs_atributos", names(raw_list_2022))]] %>% 
+    dplyr::select(starts_with("ID"), V39d, V39c) %>% 
+    #raw_list_2019[[grep("Empresas_orgs_atributos", names(raw_list_2019))]] %>% 
+    #dplyr::select(starts_with("ID"), V39a, V39b) %>%
+    #dplyr::select(starts_with("ID")) %>% 
+    #dplyr::rename(ID_node = ID)  %>% 
+    dplyr::mutate_all(as.character) %>% 
+    #dplyr::left_join(., raw_list_2022[[grep("Empresas_orgs_atributos", names(raw_list_2022))]] %>% 
+    #                  dplyr::select(starts_with("ID"), V39a, V39c), by = "ID_node") %>% 
+    dplyr::left_join(., groups$rodada_2019 %>% dplyr::select(ID_node, Nome, V1)) %>% 
+    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2022, var = "V39d", var_lab = "Type of organization"), by = c("V39d" = "Opcoes_numero")) %>% 
+    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2022, var = "V39c", var_lab = "Subtype of organization"), by = c("V39c" = "Opcoes_numero")) %>% 
+    dplyr::rename("V39b" = "V39c"),
+  
+  rodada_2020 =  raw_list_2022[[grep("Empresas_orgs_atributos", names(raw_list_2022))]] %>% 
+    dplyr::select(starts_with("ID"), V39d, V39c) %>% 
+    #raw_list_2020[[grep("orgs_atributos_all", names(raw_list_2020))]] %>% 
+    #dplyr::select(starts_with("ID"), V39a, V39b) %>%
+    #dplyr::select(starts_with("ID")) %>% 
+    dplyr::mutate_all(as.character) %>% 
+    #dplyr::left_join(., raw_list_2022[[grep("Empresas_orgs_atributos", names(raw_list_2022))]] %>% 
+    #                   dplyr::select(starts_with("ID"), V39a, V39c), by = "ID_node") %>% 
+    dplyr::left_join(., groups$rodada_2020 %>% dplyr::select(ID_node, Nome, V1), by = c("ID_node" = "ID_node")) %>% 
+    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2022, var = "V39d", var_lab = "Type of organization"), by = c("V39d" = "Opcoes_numero")) %>% 
+    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2022, var = "V39c", var_lab = "Subtype of organization"), by = c("V39c" = "Opcoes_numero"))%>% 
+    dplyr::rename("V39b" = "V39c") ,
+  
+  rodada_2021 = raw_list_2022[[grep("Empresas_orgs_atributos", names(raw_list_2022))]] %>% 
+    dplyr::select(starts_with("ID"), V39d, V39c) %>% 
+    #raw_list_2021[[grep("Empresas_orgs_atributos", names(raw_list_2021))]] %>% 
+    #dplyr::select(starts_with("ID"), V39a, V39b) %>%
+    #dplyr::select(starts_with("ID")) %>% 
+    dplyr::mutate_all(as.character) %>% 
+    #dplyr::left_join(., raw_list_2022[[grep("Empresas_orgs_atributos", names(raw_list_2022))]] %>% 
+    #                   dplyr::select(starts_with("ID"), V39a, V39c), by = "ID_node") %>% ##
+    dplyr::left_join(., groups$rodada_2021 %>% dplyr::select(ID_node, Nome, V1), by = c("ID_node" = "ID_node")) %>% 
+    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2022, var = "V39d", var_lab = "Type of organization"), by = c("V39d" = "Opcoes_numero")) %>% 
+    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2022, var = "V39c", var_lab = "Subtype of organization"), by = c("V39c" = "Opcoes_numero")) %>% 
+    dplyr::rename("V39b" = "V39c"),
+  
+  rodada_2022 = raw_list_2022[[grep("Empresas_orgs_atributos", names(raw_list_2022))]] %>% 
+    dplyr::select(starts_with("ID"), V39d, V39c) %>%
+    dplyr::mutate_all(as.character) %>% 
+    dplyr::left_join(., groups$rodada_2022 %>% dplyr::select(ID_node, Nome, V1), by = c("ID_node" = "ID_node")) %>% 
+    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2022, var = "V39d", var_lab = "Type of organization"), by = c("V39d" = "Opcoes_numero")) %>% 
+    dplyr::left_join(., get_questions_opts(data = preguntas$rodada_2022, var = "V39c", var_lab = "Subtype of organization"), by = c("V39c" = "Opcoes_numero")) %>% 
+    dplyr::rename("V39b" = "V39c")
+  
+)
 
 informer <- list(
   rodada_2019 = raw_list_2019[[grep("Informer", names(raw_list_2019))]] %>% 
